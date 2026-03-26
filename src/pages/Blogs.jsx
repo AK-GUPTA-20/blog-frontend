@@ -222,13 +222,7 @@ export default function Blogs() {
     setError(null);
 
     try {
-      console.log('📡 Fetching blogs from API...');
-
       const response = await getAllPosts(1, 100);
-
-      console.log('✓ API Response:', response);
-
-      // Handle different response structures
       let data = response;
       
       if (response?.data && Array.isArray(response.data)) {
@@ -243,16 +237,12 @@ export default function Blogs() {
 
       // Validate data
       if (!Array.isArray(data) || data.length === 0) {
-        console.warn('⚠ API returned no data');
         setBlogs([]);
         return;
       }
 
       setBlogs(data);
-
-      console.log('✓ Successfully loaded', data.length, 'blogs from API');
     } catch (err) {
-      console.error('✗ API Error:', err);
       setError(err);
     } finally {
       setIsLoading(false);

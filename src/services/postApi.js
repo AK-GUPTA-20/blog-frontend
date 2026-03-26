@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://blog-backend-mueu.onrender.com').trim().replace(/\/$/, '');
 const API_PREFIX = (import.meta.env.VITE_API_PREFIX || '/api/v1').trim().replace(/\/$/, '');
 const BASE_URL = buildApiUrl(`${API_PREFIX}/posts`);
 

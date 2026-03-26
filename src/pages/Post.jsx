@@ -3,7 +3,8 @@ import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Share2, Bookmark, Heart, ArrowLeft, Clock, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Skeleton } from '../components/ui/skeleton';
-import { getPostBySlug } from '../services/postApi';
+import { toast } from '../components/Toast';
+import { getPostBySlug, likePost, savePost } from '../services/postApi';
 
 function PostSkeleton() {
   return (
@@ -49,14 +50,30 @@ export default function Post() {
   const [post, setPost] = useState(location.state?.post || null);
   const [isLoading, setIsLoading] = useState(!post);
   const [error, setError] = useState(null);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [views, setViews] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
+  const [postId, setPostId] = useState(null);
+
+  // Get token from localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null;
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
 
+  // Fetch post data
   useEffect(() => {
-    // If post is already in state, don't fetch again
-    if (post) return;
+    if (post) {
+      const postData = post.data || post;
+      setPostId(postData._id);
+      setLikes(postData?.stats?.likes || 0);
+      setViews(postData?.stats?.views || 0);
+      // Check if user has already liked this post
+      setIsLiked(postData?.isLiked || postData?.userLiked || false);
+      return;
+    }
 
     const fetchPost = async () => {
       setIsLoading(true);
@@ -64,7 +81,14 @@ export default function Post() {
       try {
         const data = await getPostBySlug(slug);
         console.log('📄 Post data:', data);
+        const postData = data.data || data;
+        
         setPost(data);
+        setPostId(postData._id);
+        setLikes(postData?.stats?.likes || 0);
+        setViews(postData?.stats?.views || 0);
+        // Check if user has already liked this post (from API response)
+        setIsLiked(postData?.isLiked || postData?.userLiked || false);
       } catch (err) {
         console.error('✗ Error fetching post:', err);
         setError(err);
@@ -75,6 +99,88 @@ export default function Post() {
 
     fetchPost();
   }, [slug, post]);
+
+  // Handle like button click
+  const handleLike = async () => {
+    if (!token) {
+      toast('Please login to like posts', 'info');
+      setTimeout(() => navigate('/login'), 500);
+      return;
+    }
+
+    if (!postId) {
+      toast('Post data not loaded', 'error');
+      return;
+    }
+
+    setIsLiking(true);
+    try {
+      const result = await likePost(token, postId);
+      console.log('✓ Like response:', result);
+      
+      // API returns { success, message, isLiked, likes }
+      const newIsLiked = result?.isLiked ?? !isLiked;
+      const newLikes = result?.likes ?? likes;
+      
+      setIsLiked(newIsLiked);
+      setLikes(newLikes);
+      
+      // Store in localStorage to persist across refreshes
+      if (typeof window !== 'undefined') {
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
+        if (newIsLiked) {
+          likedPosts[postId] = true;
+        } else {
+          delete likedPosts[postId];
+        }
+        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+      }
+      
+      toast(newIsLiked ? 'Post liked!' : 'Post unliked', 'success');
+      console.log(`✓ Post ${newIsLiked ? 'liked' : 'unliked'} - Total likes: ${newLikes}`);
+    } catch (err) {
+      console.error('✗ Error liking post:', err);
+      toast(err.message || 'Failed to like post', 'error');
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  // Load liked posts from localStorage on mount
+  useEffect(() => {
+    if (postId && token && typeof window !== 'undefined') {
+      const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
+      if (likedPosts[postId]) {
+        setIsLiked(true);
+      }
+    }
+  }, [postId, token]);
+
+  // Handle save button click
+  const handleSave = async () => {
+    if (!token) {
+      toast('Please login to save posts', 'info');
+      setTimeout(() => navigate('/login'), 500);
+      return;
+    }
+
+    // Show "not allowed yet" message
+    toast('This feature is not allowed yet', 'info');
+  };
+
+  // Handle share
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: post?.title || 'Check out this blog post',
+        text: post?.description || 'Read this interesting article',
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast('Link copied to clipboard', 'success');
+    }
+  };
 
   if (isLoading) {
     return <PostSkeleton />;
@@ -104,21 +210,20 @@ export default function Post() {
   }
 
   // Extract data from API response
-  const authorId = post.author?.id || post.author?._id || 'unknown';
-  const authorName = post.author?.name || 'Anonymous Author';
-  const authorAvatar = post.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`;
-  const authorRole = post.author?.role || 'Author';
+  const postData = post.data || post;
+  const authorId = postData?.author?.id || postData?.author?._id || 'unknown';
+  const authorName = postData?.author?.name || 'Anonymous Author';
+  const authorAvatar = postData?.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`;
+  const authorRole = postData?.author?.role || 'Author';
 
-  const featuredImage = post.featuredImage || post.image || post.thumbnail || `https://images.unsplash.com/photo-1516534775068-bb6c2ff74b3f?q=80&w=2670&auto=format&fit=crop`;
-  const title = post.title || 'Untitled Post';
-  const category = post.category || 'Uncategorized';
-  const description = post.description || post.excerpt || '';
-  const content = post.content || post.body || '';
-  const publishedDate = post.publishedAt || post.createdAt;
-  const readingTime = post.stats?.readingTime || post.readTime || 1;
-  const views = post.stats?.views || post.views || 0;
-  const likes = post.stats?.likes || post.likes || 0;
-  const tags = post.tags || [];
+  const featuredImage = postData?.featuredImage || postData?.image || postData?.thumbnail || `https://images.unsplash.com/photo-1516534775068-bb6c2ff74b3f?q=80&w=2670&auto=format&fit=crop`;
+  const title = postData?.title || 'Untitled Post';
+  const category = postData?.category || 'Uncategorized';
+  const description = postData?.description || postData?.excerpt || '';
+  const content = postData?.content || postData?.body || '';
+  const publishedDate = postData?.publishedAt || postData?.createdAt;
+  const readingTime = postData?.stats?.readingTime || postData?.readTime || 1;
+  const tags = postData?.tags || [];
 
   return (
     <article className="pb-24">
@@ -155,21 +260,36 @@ export default function Post() {
       </div>
 
       <div className="layout-container mt-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Sidebar Actions */}
+        {/* Sidebar Actions - Desktop Only */}
         <div className="hidden lg:block lg:col-span-2 relative">
           <div className="sticky top-32 flex flex-col items-center gap-6 glass-card py-6 rounded-full w-16 mx-auto">
             <button
-              className="text-on-surface-variant hover:text-primary transition-colors"
+              onClick={handleLike}
+              disabled={isLiking}
+              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                isLiked
+                  ? 'text-primary'
+                  : 'text-on-surface-variant hover:text-primary'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
               title={`${likes} likes`}
             >
-              <Heart size={20} />
-              {likes > 0 && <span className="text-xs mt-1">{likes}</span>}
+              <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
+              {likes > 0 && <span className="text-xs">{likes}</span>}
             </button>
             <div className="w-8 h-px bg-outline-variant my-2" />
-            <button className="text-on-surface-variant hover:text-primary transition-colors" title="Save post">
+            <button 
+              onClick={handleSave}
+              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg cursor-not-allowed opacity-50" 
+              title="This feature is not allowed yet"
+              disabled
+            >
               <Bookmark size={20} />
             </button>
-            <button className="text-on-surface-variant hover:text-primary transition-colors" title="Share post">
+            <button 
+              onClick={handleShare}
+              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg" 
+              title="Share post"
+            >
               <Share2 size={20} />
             </button>
           </div>
@@ -256,6 +376,42 @@ export default function Post() {
             <div className="bg-surface-container-low rounded-2xl p-4 text-center">
               <p className="text-2xl font-headline font-bold text-on-surface">{readingTime}</p>
               <p className="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Min Read</p>
+            </div>
+          </div>
+
+          {/* Mobile Action Buttons - Visible on Mobile Only */}
+          <div className="lg:hidden mt-12 pt-8 border-t border-outline-variant/30">
+            <div className="flex items-center justify-around gap-4">
+              <button
+                onClick={handleLike}
+                disabled={isLiking}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isLiked
+                    ? 'bg-primary/10 text-primary'
+                    : 'glass-card hover:bg-surface-bright text-on-surface-variant hover:text-primary'
+                }`}
+                title={`${likes} likes`}
+              >
+                <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
+                <span className="text-sm font-semibold">{likes}</span>
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass-card text-on-surface-variant opacity-50 cursor-not-allowed" 
+                title="This feature is not allowed yet"
+              >
+                <Bookmark size={20} />
+                <span className="text-sm font-semibold">Save</span>
+              </button>
+              <button 
+                onClick={handleShare}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass-card hover:bg-surface-bright transition-colors text-on-surface-variant hover:text-primary" 
+                title="Share post"
+              >
+                <Share2 size={20} />
+                <span className="text-sm font-semibold">Share</span>
+              </button>
             </div>
           </div>
         </div>

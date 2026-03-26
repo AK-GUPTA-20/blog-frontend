@@ -283,8 +283,6 @@ export default function MyProfile() {
   useEffect(() => {
     if (!isError) return;
 
-    console.error('❌ Profile fetch error:', error);
-
     if (error?.status === 401) {
       logout();
       toast('Your session expired. Please sign in again.', 'error');
