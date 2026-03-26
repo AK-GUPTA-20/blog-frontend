@@ -1,86 +1,67 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
 const API_PREFIX = (import.meta.env.VITE_API_PREFIX || '/api/v1').trim().replace(/\/$/, '');
 const BASE_URL = buildApiUrl(`${API_PREFIX}/auth`);
-
-function normalizeMaybeString(value) {
-  if (typeof value !== 'string') return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-  const lowered = trimmed.toLowerCase();
-  if (lowered === 'null' || lowered === 'undefined') return '';
-  return trimmed;
-}
+const TOKEN_KEY = 'velora_token';
+const USER_KEY = 'velora_user';
 
 function buildApiUrl(path) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return API_BASE_URL ? `${API_BASE_URL}${normalizedPath}` : normalizedPath;
 }
 
-function resolveBearerToken(token) {
-  const fallbackToken = typeof window !== 'undefined' ? localStorage.getItem('velora_token') : '';
-  const rawToken = normalizeMaybeString(token) || normalizeMaybeString(fallbackToken);
+function getBearerToken(token) {
+  const rawToken = token || (typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : '');
   if (!rawToken) return '';
-  return rawToken.toLowerCase().startsWith('bearer ')
-    ? rawToken
-    : `Bearer ${rawToken}`;
+  return rawToken.toLowerCase().startsWith('bearer ') ? rawToken : `Bearer ${rawToken}`;
 }
 
-export function getAuthPayload(payload, fallbackUser = {}) {
-  const root = payload || {};
-  const nested = root?.data || {};
+function storeToken(token) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+}
 
-  const user = root?.user || nested?.user || nested?.data?.user || fallbackUser;
+function storeUser(user) {
+  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
 
-  const token = normalizeMaybeString(
-    root?.token
-    || root?.accessToken
-    || root?.jwt
-    || root?.user?.token
-    || root?.user?.accessToken
-    || root?.user?.jwt
-    || nested?.token
-    || nested?.accessToken
-    || nested?.jwt
-    || nested?.user?.token
-    || nested?.user?.accessToken
-    || nested?.user?.jwt
-    || nested?.data?.token
-    || nested?.data?.accessToken
-    || nested?.data?.jwt
-    || nested?.data?.user?.token
-    || nested?.data?.user?.accessToken
-    || nested?.data?.user?.jwt
-  );
+function clearStorage() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
 
-  return { user, token };
+function normalizeString(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed || ['null', 'undefined'].includes(trimmed.toLowerCase())) return '';
+  return trimmed;
+}
+
+function extractUser(payload) {
+  if (!payload) return null;
+  return payload?.user || payload?.data?.user || payload?.data || null;
+}
+
+function extractToken(payload) {
+  if (!payload) return null;
+  return payload?.token || payload?.accessToken || payload?.jwt || null;
 }
 
 function createAuthHeaders(token, includeJson = true) {
-  const bearer = resolveBearerToken(token);
   const headers = {};
-
-  if (includeJson) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (bearer) {
-    headers['Authorization'] = bearer;
-  }
-
+  if (includeJson) headers['Content-Type'] = 'application/json';
+  const bearer = getBearerToken(token);
+  if (bearer) headers['Authorization'] = bearer;
   return headers;
 }
 
 async function parseResponse(res, fallbackMessage) {
-  if (res.status === 429) {
-    throw new Error('Too many requests. Please try again later.');
-  }
+  if (res.status === 429) throw new Error('Too many requests. Please try again later.');
 
   let data = null;
   try {
     data = await res.json();
   } catch {
-    const rawText = await res.text();
-    data = rawText ? { message: rawText } : {};
+    const text = await res.text();
+    data = text ? { message: text } : {};
   }
 
   if (!res.ok) {
@@ -88,15 +69,12 @@ async function parseResponse(res, fallbackMessage) {
     error.status = res.status;
     throw error;
   }
+
   return data;
 }
 
 async function apiFetch(url, options = {}) {
-  const finalOptions = {
-    ...options,
-    credentials: 'omit', // We primarily rely on Bearer tokens. Change to 'include' if backend uses cookies.
-  };
-  return fetch(url, finalOptions);
+  return fetch(url, { ...options, credentials: 'omit' });
 }
 
 export async function registerUser({ name, email, password, gender }) {
@@ -105,7 +83,11 @@ export async function registerUser({ name, email, password, gender }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password, gender }),
   });
-  return parseResponse(res, 'Registration failed.');
+
+  const data = await parseResponse(res, 'Registration failed.');
+  const token = extractToken(data);
+  if (token) storeToken(token);
+  return data;
 }
 
 export async function verifyOtp({ email, otp }) {
@@ -114,7 +96,11 @@ export async function verifyOtp({ email, otp }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, otp }),
   });
-  return parseResponse(res, 'OTP verification failed.');
+
+  const data = await parseResponse(res, 'OTP verification failed.');
+  const token = extractToken(data);
+  if (token) storeToken(token);
+  return data;
 }
 
 export async function resendOtp({ email }) {
@@ -123,6 +109,7 @@ export async function resendOtp({ email }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
   });
+
   return parseResponse(res, 'Failed to resend OTP.');
 }
 
@@ -132,31 +119,78 @@ export async function loginUser({ email, password }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
-  return parseResponse(res, 'Login failed.');
+
+  const data = await parseResponse(res, 'Login failed.');
+  const token = extractToken(data);
+  const user = extractUser(data);
+
+  if (token) storeToken(token);
+  if (user) storeUser(user);
+
+  return data;
+}
+
+export async function forgotPassword({ email }) {
+  const res = await apiFetch(`${BASE_URL}/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  return parseResponse(res, 'Failed to send reset email.');
+}
+
+export async function resetPassword(resetToken, { password, confirmPassword }) {
+  const res = await apiFetch(`${BASE_URL}/reset-password/${resetToken}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password, confirmPassword }),
+  });
+
+  return parseResponse(res, 'Failed to reset password.');
+}
+
+export async function getUserProfileById(userId) {
+  const res = await apiFetch(`${BASE_URL}/${userId}`, {
+    method: 'GET',
+  });
+
+  return parseResponse(res, 'Failed to fetch user profile.');
+}
+
+export function getAuthPayload(payload, fallbackUser = {}) {
+  const user = extractUser(payload) || fallbackUser;
+  const token = normalizeString(extractToken(payload));
+  return { user, token };
 }
 
 export async function getMyProfile(token) {
-  const res = await apiFetch(buildApiUrl(`${API_PREFIX}/auth/me/profile`), {
+  const headers = createAuthHeaders(token);
+  const url = buildApiUrl(`${API_PREFIX}/auth/me/profile`);
+
+  const res = await apiFetch(url, {
     method: 'GET',
-    headers: createAuthHeaders(token),
+    headers,
   });
+
   return parseResponse(res, 'Failed to fetch profile.');
 }
 
-export async function updateMyProfile(token, payload) {
+export async function updateMyProfile(token, profileData) {
   const res = await apiFetch(`${BASE_URL}/me/update-profile`, {
     method: 'PUT',
     headers: createAuthHeaders(token),
-    body: JSON.stringify(payload),
+    body: JSON.stringify(profileData),
   });
+
   return parseResponse(res, 'Failed to update profile.');
 }
 
 export async function uploadProfileImage(token, file) {
-  const candidateFields = ['image', 'avatar', 'profileImage', 'file'];
+  const fieldNames = ['image', 'avatar', 'profileImage', 'file'];
   let lastError = null;
 
-  for (const fieldName of candidateFields) {
+  for (const fieldName of fieldNames) {
     try {
       const formData = new FormData();
       formData.append(fieldName, file);
@@ -167,32 +201,25 @@ export async function uploadProfileImage(token, file) {
         body: formData,
       });
 
-      return await parseResponse(res, 'Failed to upload profile image.');
+      return parseResponse(res, 'Failed to upload profile image.');
     } catch (error) {
       lastError = error;
-      const message = String(error?.message || '').toLowerCase();
-      const shouldTryAnotherField =
-        message.includes('unexpected field') ||
-        message.includes('multipart') ||
-        message.includes('field');
-
-      if (!shouldTryAnotherField) {
-        throw error;
-      }
+      const isFieldError = String(error.message || '').toLowerCase().includes('field');
+      if (!isFieldError) throw error;
     }
   }
 
   throw lastError || new Error('Failed to upload profile image.');
 }
 
-export async function changePassword(token, payload) {
+export async function changePassword(token, passwordData) {
   const res = await apiFetch(`${BASE_URL}/me/change-password`, {
     method: 'POST',
     headers: createAuthHeaders(token),
     body: JSON.stringify({
-      currentPassword: payload?.currentPassword ?? payload?.oldPassword,
-      newPassword: payload?.newPassword,
-      confirmPassword: payload?.confirmPassword,
+      currentPassword: passwordData?.currentPassword ?? passwordData?.oldPassword,
+      newPassword: passwordData?.newPassword,
+      confirmPassword: passwordData?.confirmPassword,
     }),
   });
 
@@ -201,8 +228,36 @@ export async function changePassword(token, payload) {
 
 export async function deleteAccount(token, password) {
   const res = await apiFetch(`${BASE_URL}/me/delete-account`, {
+    method: 'DELETE',
     headers: createAuthHeaders(token),
     body: JSON.stringify({ password }),
   });
+
   return parseResponse(res, 'Failed to delete account.');
+}
+
+export async function followUser(token, userId) {
+  const res = await apiFetch(`${BASE_URL}/me/follow/${userId}`, {
+    method: 'POST',
+    headers: createAuthHeaders(token),
+  });
+
+  return parseResponse(res, 'Failed to follow user.');
+}
+
+export async function logout(token) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/logout`, {
+      method: 'POST',
+      headers: createAuthHeaders(token),
+    });
+
+    await parseResponse(res, 'Failed to logout.');
+  } finally {
+    clearStorage();
+  }
+}
+
+export function clearAuth() {
+  clearStorage();
 }

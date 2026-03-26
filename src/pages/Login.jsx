@@ -95,7 +95,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-20 bg-background relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-mesh pointer-events-none" />
 
       <motion.div

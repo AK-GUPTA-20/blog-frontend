@@ -283,6 +283,8 @@ export default function MyProfile() {
   useEffect(() => {
     if (!isError) return;
 
+    console.error('❌ Profile fetch error:', error);
+
     if (error?.status === 401) {
       logout();
       toast('Your session expired. Please sign in again.', 'error');
@@ -637,8 +639,6 @@ export default function MyProfile() {
               </div>
             </div>
           </div>
-
-
         </motion.div>
 
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -697,28 +697,28 @@ export default function MyProfile() {
                         data={engagement}
                         margin={{ left: -20, right: 8, top: 16, bottom: 4 }}
                       >
-                          <defs>
-                            <linearGradient id="readsGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
-                              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
-                            </linearGradient>
-                            <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.45} />
-                              <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0.04} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--outline-variant))" opacity={0.5} />
-                          <XAxis dataKey="label" stroke="hsl(var(--on-surface-variant))" tickLine={false} axisLine={false} />
-                          <YAxis stroke="hsl(var(--on-surface-variant))" tickLine={false} axisLine={false} width={26} />
-                          <Tooltip
-                            contentStyle={{
-                              background: 'hsl(var(--surface))',
-                              border: '1px solid hsl(var(--outline-variant))',
-                              borderRadius: '12px',
-                            }}
-                          />
-                          <Area type="monotone" dataKey="reads" stroke="hsl(var(--primary))" fill="url(#readsGradient)" strokeWidth={2} />
-                          <Area type="monotone" dataKey="interactions" stroke="hsl(var(--accent))" fill="url(#engagementGradient)" strokeWidth={2} />
+                        <defs>
+                          <linearGradient id="readsGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
+                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                          </linearGradient>
+                          <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.45} />
+                            <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0.04} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--outline-variant))" opacity={0.5} />
+                        <XAxis dataKey="label" stroke="hsl(var(--on-surface-variant))" tickLine={false} axisLine={false} />
+                        <YAxis stroke="hsl(var(--on-surface-variant))" tickLine={false} axisLine={false} width={26} />
+                        <Tooltip
+                          contentStyle={{
+                            background: 'hsl(var(--surface))',
+                            border: '1px solid hsl(var(--outline-variant))',
+                            borderRadius: '12px',
+                          }}
+                        />
+                        <Area type="monotone" dataKey="reads" stroke="hsl(var(--primary))" fill="url(#readsGradient)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="interactions" stroke="hsl(var(--accent))" fill="url(#engagementGradient)" strokeWidth={2} />
                       </AreaChart>
                     ) : (
                       <Skeleton className="h-full w-full rounded-2xl" />
