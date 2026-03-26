@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Moon, Sun, LogOut, User } from 'lucide-react';
+import { Menu, X, Search, Moon, Sun, LogOut, PenTool } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -131,8 +131,10 @@ export default function Navbar() {
           <div className="h-6 w-px bg-outline-variant opacity-20"></div>
           {user ? (
             <div className="flex items-center gap-3">
+              <Link to="/write-blog" className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold text-sm">
+                <PenTool size={16} /> Write
+              </Link>
               <Link to="/my-profile" className="flex items-center gap-2 group hover:text-primary transition-colors">
-                <User size={16} />
                 <span className="text-sm font-semibold text-on-surface">{user.name || user.email}</span>
               </Link>
               <button onClick={handleLogout} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-outline-variant/50 text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:border-rose-500/50 transition-all">
@@ -174,11 +176,18 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <Link
+                      to="/write-blog"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-2 px-4 py-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-semibold"
+                    >
+                      <PenTool size={18} />
+                      <span>Write Blog</span>
+                    </Link>
+                    <Link
                       to="/my-profile"
                       onClick={() => setIsOpen(false)}
                       className="flex items-center gap-2 px-4 py-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors text-foreground font-semibold"
                     >
-                      <User size={18} />
                       <span>{user.name || user.email}</span>
                     </Link>
                     <button

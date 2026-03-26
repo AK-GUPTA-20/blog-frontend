@@ -16,6 +16,7 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import OtpVerify from "./pages/OtpVerify"
 import MyProfile from "./pages/MyProfile"
+import WriteBlog from "./pages/WriteBlog"
 
 function App() {
   return (
@@ -38,6 +39,8 @@ function App() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/verify-otp" element={<OtpVerify />} />
                   <Route path="/my-profile" element={<MyProfile />} />
+                  <Route path="/write-blog" element={<WriteBlog />} />
+                  <Route path="/write-blog/:id" element={<WriteBlog />} />
                 </Routes>
               </main>
               <Footer />
@@ -50,4 +53,3 @@ function App() {
 }
 
 export default App
-
