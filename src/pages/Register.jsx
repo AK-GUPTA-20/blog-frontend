@@ -14,7 +14,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
-import { registerUser } from '../services/authApi';
+import { getAuthPayload, registerUser } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
 import { Progress } from '../components/ui/progress';
@@ -39,11 +39,11 @@ function getPasswordStrength(value) {
 export default function Register() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', gender: 'male' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState('');
-  const [touched, setTouched] = useState({ name: false, email: false, password: false });
+  const [touched, setTouched] = useState({ name: false, email: false, password: false, gender: false });
   const [otpOpen, setOtpOpen] = useState(false);
 
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -64,10 +64,14 @@ export default function Register() {
         valid: form.password.length >= 8 && strength.value >= 50,
         message: form.password.length >= 8 ? `${strength.label} password` : 'Minimum 8 characters',
       },
+      gender: {
+        valid: form.gender === 'male' || form.gender === 'female',
+        message: form.gender === 'male' || form.gender === 'female' ? 'Selected' : 'Please select gender',
+      },
     };
-  }, [form.name, form.email, form.password, strength.label, strength.value]);
+  }, [form.name, form.email, form.password, form.gender, strength.label, strength.value]);
 
-  const isFormValid = validations.name.valid && validations.email.valid && validations.password.valid;
+  const isFormValid = validations.name.valid && validations.email.valid && validations.password.valid && validations.gender.valid;
 
   const setFieldTouched = (name) => setTouched((prev) => ({ ...prev, [name]: true }));
 
@@ -77,7 +81,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setTouched({ name: true, email: true, password: true });
+    setTouched({ name: true, email: true, password: true, gender: true });
 
     if (!isFormValid) {
       toast('Please fix the highlighted fields before continuing.', 'error');
@@ -87,21 +91,18 @@ export default function Register() {
     setLoading(true);
     try {
       const data = await registerUser(form);
-      if (data.success || data.message?.toLowerCase().includes('success')) {
-        toast(data.message || 'Registration successful. Verify your email to continue.', 'success');
-        setOtpOpen(true);
-      } else {
-        toast(data.message || 'Registration failed. Please try again.', 'error');
-      }
+      toast(data.message || 'Registration successful. Verify your email to continue.', 'success');
+      setOtpOpen(true);
     } catch (err) {
-      toast('Network error. Please try again.', 'error');
+      toast(err.message || 'Registration failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const onOtpVerified = (data) => {
-    login(data.user || { email: form.email.trim(), name: form.name.trim() }, data.token || '');
+    const auth = getAuthPayload(data, { email: form.email.trim(), name: form.name.trim(), gender: form.gender });
+    login(auth.user, auth.token);
     navigate('/');
   };
 
@@ -246,6 +247,39 @@ export default function Register() {
                 </div>
                 <Progress value={strength.value} indicatorClassName={strength.color} />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Gender</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' },
+                ].map(({ value, label }) => (
+                  <label
+                    key={value}
+                    className={`cursor-pointer rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                      form.gender === value
+                        ? 'border-primary bg-primary/15 text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.1)]'
+                        : 'border-outline-variant/60 bg-surface-container/70 text-on-surface-variant hover:border-primary/45'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={value}
+                      checked={form.gender === value}
+                      onChange={handleChange}
+                      onBlur={() => setFieldTouched('gender')}
+                      className="sr-only"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              {touched.gender && !validations.gender.valid && (
+                <p className="text-xs text-rose-500">{validations.gender.message}</p>
+              )}
             </div>
 
             <motion.div whileHover={{ scale: loading ? 1 : 1.01 }} whileTap={{ scale: loading ? 1 : 0.99 }}>

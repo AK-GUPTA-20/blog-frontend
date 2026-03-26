@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
-import { loginUser } from '../services/authApi';
+import { getAuthPayload, loginUser } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
 import { Button } from '../components/ui/button';
@@ -69,22 +69,20 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await loginUser(form);
-      if (data.success || data.message?.toLowerCase().includes('success')) {
-        login(data.user || { email: form.email }, data.token || '');
-        toast(data.message || 'Welcome back!', 'success');
-        navigate('/');
-      } else {
-        toast(data.message || 'Login failed. Check your credentials.', 'error');
-      }
+      const auth = getAuthPayload(data, { email: form.email.trim() });
+      login(auth.user, auth.token);
+      toast(data.message || 'Welcome back!', 'success');
+      navigate('/');
     } catch (err) {
-      toast('Network error. Please try again.', 'error');
+      toast(err.message || 'Login failed. Check your credentials.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const onOtpVerified = (data) => {
-    login(data.user || { email: form.email }, data.token || '');
+    const auth = getAuthPayload(data, { email: form.email.trim() });
+    login(auth.user, auth.token);
     navigate('/');
   };
 

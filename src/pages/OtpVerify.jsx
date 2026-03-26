@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
-import { verifyOtp, resendOtp } from '../services/authApi';
+import { getAuthPayload, verifyOtp, resendOtp } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
 
@@ -59,15 +59,12 @@ export default function OtpVerify() {
     setLoading(true);
     try {
       const data = await verifyOtp({ email, otp });
-      if (data.success || data.message?.toLowerCase().includes('success')) {
-        login(data.user || { email }, data.token || '');
-        toast(data.message || 'Email verified! Welcome to Velora Journal.', 'success');
-        navigate('/');
-      } else {
-        toast(data.message || 'Invalid OTP. Please check and try again.', 'error');
-      }
+      const auth = getAuthPayload(data, { email });
+      login(auth.user, auth.token);
+      toast(data.message || 'Email verified! Welcome to Velora Journal.', 'success');
+      navigate('/');
     } catch (err) {
-      toast('Network error. Please try again.', 'error');
+      toast(err.message || 'Invalid OTP. Please check and try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -78,16 +75,12 @@ export default function OtpVerify() {
     setResending(true);
     try {
       const data = await resendOtp({ email });
-      if (data.success || data.message?.toLowerCase().includes('success')) {
-        toast(data.message || 'OTP resent to your email!', 'success');
-        setCountdown(60);
-        setDigits(['', '', '', '', '']);
-        refs.current[0]?.focus();
-      } else {
-        toast(data.message || 'Failed to resend OTP.', 'error');
-      }
+      toast(data.message || 'OTP resent to your email!', 'success');
+      setCountdown(60);
+      setDigits(['', '', '', '', '', '']);
+      refs.current[0]?.focus();
     } catch (err) {
-      toast('Network error. Please try again.', 'error');
+      toast(err.message || 'Failed to resend OTP.', 'error');
     } finally {
       setResending(false);
     }

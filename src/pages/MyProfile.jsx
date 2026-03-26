@@ -184,9 +184,33 @@ function getNormalizedUser(payload) {
   return payload?.user || payload?.data?.user || payload?.data || null;
 }
 
+function normalizeGenderCode(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'm' || raw === 'male') return 'M';
+  if (raw === 'f' || raw === 'female') return 'F';
+  return 'O';
+}
+
+function getGenderLabel(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return 'Not specified';
+
+  const normalized = raw.toLowerCase();
+  if (normalized === 'm' || normalized === 'male') return 'Male';
+  if (normalized === 'f' || normalized === 'female') return 'Female';
+  if (normalized === 'o' || normalized === 'other') return 'Other';
+
+  return raw;
+}
+
+function isCustomGender(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  return Boolean(raw) && !['m', 'male', 'f', 'female', 'o', 'other'].includes(raw);
+}
+
 export default function MyProfile() {
   const navigate = useNavigate();
-  const { user: authUser, token, login } = useAuth();
+  const { user: authUser, token, login, logout } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [networkTab, setNetworkTab] = useState('followers');
@@ -197,6 +221,7 @@ export default function MyProfile() {
     name: '',
     bio: '',
     gender: 'M',
+    customGender: '',
     website: '',
     twitter: '',
     github: '',
@@ -224,9 +249,11 @@ export default function MyProfile() {
     isLoading,
     isFetching,
     isError,
+    error,
   } = useQuery({
     queryKey: ['my-profile', token],
     enabled: Boolean(token),
+    retry: false,
     queryFn: async () => {
       const data = await getMyProfile(token);
       if (!data?.user) {
@@ -238,10 +265,14 @@ export default function MyProfile() {
 
   useEffect(() => {
     if (!profile) return;
+    const normalizedGender = normalizeGenderCode(profile.gender);
+    const customGender = isCustomGender(profile.gender) ? String(profile.gender).trim() : '';
+
     setDraft({
       name: profile.name || '',
       bio: profile.bio || '',
-      gender: profile.gender || 'M',
+      gender: normalizedGender,
+      customGender,
       website: profile.socialLinks?.website || '',
       twitter: profile.socialLinks?.twitter || '',
       github: profile.socialLinks?.github || '',
@@ -251,8 +282,16 @@ export default function MyProfile() {
 
   useEffect(() => {
     if (!isError) return;
+
+    if (error?.status === 401) {
+      logout();
+      toast('Your session expired. Please sign in again.', 'error');
+      navigate('/login');
+      return;
+    }
+
     toast('Unable to load your profile right now.', 'error');
-  }, [isError]);
+  }, [error?.status, isError, logout, navigate]);
 
   useEffect(() => {
     if (activeTab !== 'overview') return;
@@ -422,10 +461,16 @@ export default function MyProfile() {
   const saveDraft = () => {
     if (!profile || profileUpdateMutation.isPending) return;
 
+    const finalGender = draft.gender === 'O'
+      ? (draft.customGender.trim() || 'Other')
+      : draft.gender === 'F'
+        ? 'female'
+        : 'male';
+
     profileUpdateMutation.mutate({
       name: draft.name.trim(),
       bio: draft.bio,
-      gender: draft.gender,
+      gender: finalGender,
       socialLinks: {
         website: draft.website,
         twitter: draft.twitter,
@@ -572,7 +617,7 @@ export default function MyProfile() {
                 )}
                 <Badge className="border-sky-400/35 bg-sky-400/12 text-sky-400 text-xs">
                   <User size={10} />
-                  {profile.gender === 'F' ? 'Female' : profile.gender === 'O' ? 'Other' : 'Male'}
+                  {getGenderLabel(profile.gender)}
                 </Badge>
               </div>
 
@@ -629,7 +674,7 @@ export default function MyProfile() {
                   <ProfileField
                     icon={User}
                     label="Gender"
-                    value={profile.gender === 'M' ? 'Male' : profile.gender === 'F' ? 'Female' : profile.gender === 'O' ? 'Other' : 'Male'}
+                    value={getGenderLabel(profile.gender)}
                   />
                   <ProfileField icon={Calendar} label="Joined" value={formatDisplayDate(profile.createdAt)} />
                   <ProfileField icon={Clock} label="Last Active" value={formatDisplayDate(profile.lastLoginAt, true)} />
@@ -967,7 +1012,7 @@ export default function MyProfile() {
                 <div className="block">
                   <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Gender</span>
                   <div className="flex gap-3">
-                    {[{ value: 'M', label: 'Male' }, { value: 'F', label: 'Female' }, { value: 'O', label: 'Other' }].map(({ value, label }) => (
+                    {[{ value: 'M', label: 'Male' }, { value: 'F', label: 'Female' }, { value: 'O', label: 'Custom' }].map(({ value, label }) => (
                       <button
                         key={value}
                         type="button"
@@ -982,6 +1027,14 @@ export default function MyProfile() {
                       </button>
                     ))}
                   </div>
+                  {draft.gender === 'O' && (
+                    <input
+                      value={draft.customGender}
+                      onChange={(event) => setDraft((prev) => ({ ...prev, customGender: event.target.value }))}
+                      className="mt-2 w-full rounded-xl border border-outline-variant/45 bg-surface-container/70 px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+                      placeholder="Enter custom gender"
+                    />
+                  )}
                 </div>
 
                 <label className="block">
