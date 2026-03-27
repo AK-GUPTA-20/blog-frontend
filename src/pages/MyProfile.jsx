@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { formatDisplayDate, createEngagementSeries, createActivity, generatePeoplePage, getNormalizedUser, normalizeGenderCode, getGenderLabel, isCustomGender } from '../lib/profileUtils';
+
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -50,210 +52,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
-// ============================================================================
+  
 // PLACEHOLDER IMAGE
-// ============================================================================
+  
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3ESaved Post%3C/text%3E%3C/svg%3E';
 
-// ============================================================================
-// STAT CARD COMPONENT
-// ============================================================================
-function StatCard({ icon: Icon, value, label, delay = 0 }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.4 }}
-      transition={{ duration: 0.4, delay }}
-      whileHover={{ y: -4 }}
-      className="group flex flex-col items-center gap-2 rounded-2xl border border-outline-variant/35 bg-surface-container/70 p-5 transition-all hover:shadow-[0_14px_40px_-20px_rgba(0,0,0,0.5)]"
-    >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary transition-transform group-hover:scale-110">
-        <Icon size={18} />
-      </div>
-      <span className="text-2xl font-headline font-extrabold text-on-surface">{value ?? 0}</span>
-      <span className="text-xs text-on-surface-variant font-medium uppercase tracking-widest">{label}</span>
-    </motion.div>
-  );
-}
+import { StatCard, ProfileField, SocialPill } from '../components/profile/ProfileComponents';
 
-// ============================================================================
-// PROFILE FIELD COMPONENT
-// ============================================================================
-function ProfileField({ icon: Icon, label, value }) {
-  if (!value) return null;
-  return (
-    <div className="flex items-start gap-3 border-b border-outline-variant/20 py-3 last:border-0">
-      <Icon size={16} className="text-primary mt-0.5 flex-shrink-0" />
-      <div className="min-w-0">
-        <p className="mb-0.5 text-xs font-bold uppercase tracking-widest text-on-surface-variant">{label}</p>
-        <p className="text-sm text-on-surface break-all">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// FORMAT DATE HELPER
-// ============================================================================
-function formatDisplayDate(value, withTime = false) {
-  if (!value) return 'N/A';
-
-  return new Date(value).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: withTime ? 'short' : 'long',
-    day: 'numeric',
-    ...(withTime && { hour: '2-digit', minute: '2-digit' }),
-  });
-}
-
-// ============================================================================
-// CREATE ENGAGEMENT SERIES
-// ============================================================================
-function createEngagementSeries(profile) {
-  const base = Math.max(4, profile?.totalPosts || 6);
-  const labels = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
-
-  return labels.map((label, idx) => {
-    const growth = Math.round((profile.totalFollowers || 0) * ((idx + 1) / 14));
-    return {
-      label,
-      reads: base * 8 + idx * 5,
-      interactions: base * 3 + idx * 2 + growth,
-    };
-  });
-}
-
-// ============================================================================
-// CREATE ACTIVITY TIMELINE
-// ============================================================================
-function createActivity(profile) {
-  const created = profile?.createdAt || Date.now();
-  const lastLogin = profile?.lastLoginAt || Date.now();
-
-  return [
-    {
-      id: 'a1',
-      icon: ShieldCheck,
-      title: 'Profile verified',
-      description: 'Account trust level upgraded after verification.',
-      time: formatDisplayDate(lastLogin, true),
-    },
-    {
-      id: 'a2',
-      icon: BookOpen,
-      title: 'Published new content',
-      description: `Your writing portfolio now includes ${profile?.totalPosts ?? 0} published posts.`,
-      time: `${Math.max(1, profile?.totalPosts ?? 1)} days ago`,
-    },
-    {
-      id: 'a3',
-      icon: Users,
-      title: 'Community growth milestone',
-      description: `Network reached ${profile?.totalFollowers ?? 0} followers and ${profile?.totalFollowing ?? 0} following.`,
-      time: `${Math.max(2, Math.ceil((profile?.totalFollowers ?? 10) / 15))} days ago`,
-    },
-    {
-      id: 'a4',
-      icon: Flame,
-      title: 'Joined platform',
-      description: 'Created your account and completed onboarding.',
-      time: formatDisplayDate(created),
-    },
-  ];
-}
-
-// ============================================================================
-// GENERATE PEOPLE PAGE
-// ============================================================================
-function generatePeoplePage(profile, kind, pageParam = 0) {
-  const total = kind === 'followers' ? profile.totalFollowers : profile.totalFollowing;
-  const pageSize = 12;
-  const start = pageParam * pageSize;
-  const end = Math.min(total, start + pageSize);
-  const hasMore = end < total;
-
-  const people = Array.from({ length: Math.max(0, end - start) }, (_, idx) => {
-    const rank = start + idx + 1;
-    const namePrefix = kind === 'followers' ? 'Follower' : 'Following';
-    return {
-      id: `${kind}-${rank}`,
-      name: `${namePrefix} ${rank}`,
-      handle: `@${namePrefix.toLowerCase()}${rank}`,
-      bio: rank % 2 === 0 ? 'Writes about design systems and product craft.' : 'Explores frontend performance and DX patterns.',
-      since: `${(rank % 11) + 1}d`,
-    };
-  });
-
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ items: people, nextCursor: hasMore ? pageParam + 1 : undefined });
-    }, 500);
-  });
-}
-
-// ============================================================================
-// SOCIAL PILL COMPONENT
-// ============================================================================
-function SocialPill({ label, url, icon: Icon }) {
-  if (!url) return null;
-
-  return (
-    <a
-      href={url.startsWith('http') ? url : `https://${url}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant/40 bg-surface-container/60 px-3 py-1.5 text-xs font-medium text-on-surface-variant transition-all hover:border-primary/40 hover:text-primary"
-    >
-      {Icon ? <Icon className="text-[12px]" /> : null}
-      {label}
-    </a>
-  );
-}
-
-// ============================================================================
-// GET NORMALIZED USER
-// ============================================================================
-function getNormalizedUser(payload) {
-  return payload?.user || payload?.data?.user || payload?.data || null;
-}
-
-// ============================================================================
-// NORMALIZE GENDER CODE
-// ============================================================================
-function normalizeGenderCode(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'm' || raw === 'male') return 'M';
-  if (raw === 'f' || raw === 'female') return 'F';
-  return 'O';
-}
-
-// ============================================================================
-// GET GENDER LABEL
-// ============================================================================
-function getGenderLabel(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return 'Not specified';
-
-  const normalized = raw.toLowerCase();
-  if (normalized === 'm' || normalized === 'male') return 'Male';
-  if (normalized === 'f' || normalized === 'female') return 'Female';
-  if (normalized === 'o' || normalized === 'other') return 'Other';
-
-  return raw;
-}
-
-// ============================================================================
-// IS CUSTOM GENDER
-// ============================================================================
-function isCustomGender(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  return Boolean(raw) && !['m', 'male', 'f', 'female', 'o', 'other'].includes(raw);
-}
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 export default function MyProfile() {
   const navigate = useNavigate();
   const { user: authUser, token, login, logout } = useAuth();
@@ -591,9 +396,9 @@ export default function MyProfile() {
     deleteAccountMutation.mutate();
   };
 
-  // ============================================================================
+    
   // LOADING STATE
-  // ============================================================================
+    
   if (isLoading) {
     return (
       <div className="relative min-h-screen overflow-hidden bg-background px-4 pb-24 pt-8">
@@ -614,9 +419,9 @@ export default function MyProfile() {
 
   if (!profile) return null;
 
-  // ============================================================================
+    
   // MAIN RENDER
-  // ============================================================================
+    
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}

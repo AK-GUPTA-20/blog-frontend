@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, Moon, Sun, LogOut, PenTool } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { APP_CONFIG } from '../constants';
 
-export default function Navbar() {
+const Navbar = memo(function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -25,11 +26,7 @@ export default function Navbar() {
 
   const handleSearchClick = () => {
     if (location.pathname === '/') {
-      const searchInput = document.getElementById('home-search-input');
-      if (searchInput) {
-        searchInput.focus();
-        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      window.dispatchEvent(new CustomEvent('focusSearch'));
     } else {
       navigate('/categories');
     }
@@ -43,11 +40,31 @@ export default function Navbar() {
     { name: 'About', path: '/about' },
   ];
 
+  const ThemeToggle = () => (
+    <button
+      onClick={toggleTheme}
+      aria-label="Toggle dark mode"
+      className="p-2 hover:bg-slate-100/50 dark:hover:bg-white/10 rounded-full transition-all scale-95 active:scale-90 duration-200 text-on-surface-variant flex items-center justify-center"
+    >
+      <AnimatePresence mode="wait">
+        {theme === 'dark' ? (
+          <motion.div key="moon" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
+            <Sun size={20} />
+          </motion.div>
+        ) : (
+          <motion.div key="sun" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
+            <Moon size={20} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/60 dark:bg-[#161926]/60 backdrop-blur-xl shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
       <div className="flex justify-between items-center px-4 sm:px-8 py-4 max-w-7xl mx-auto font-headline font-medium tracking-tight">
         <Link to="/" className="text-xl sm:text-2xl font-bold tracking-tighter text-slate-900 dark:text-[#ffdd79]">
-          Velora Journal
+          {APP_CONFIG.APP_NAME}
         </Link>
 
         <div className="hidden md:flex items-center space-x-8">
@@ -71,25 +88,11 @@ export default function Navbar() {
         </div>
 
         <div className="flex md:hidden items-center space-x-2">
-          <button
-            onClick={toggleTheme}
-            className="p-2 hover:bg-slate-100/50 dark:hover:bg-white/10 rounded-full transition-all scale-95 active:scale-90 duration-200 text-on-surface-variant flex items-center justify-center"
-          >
-            <AnimatePresence mode="wait">
-              {theme === 'dark' ? (
-                <motion.div key="moon" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
-                  <Sun size={18} />
-                </motion.div>
-              ) : (
-                <motion.div key="sun" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
-                  <Moon size={18} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </button>
+          <ThemeToggle />
 
           <button
             onClick={handleSearchClick}
+            aria-label="Search"
             className="p-2 hover:bg-slate-100/50 dark:hover:bg-white/10 rounded-full transition-all scale-95 active:scale-90 duration-200 text-on-surface-variant flex items-center justify-center"
           >
             <Search size={18} />
@@ -97,6 +100,7 @@ export default function Navbar() {
 
           <button
             className="md:hidden text-foreground p-2"
+            aria-label="Toggle menu"
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -105,24 +109,10 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center space-x-6">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={toggleTheme}
-              className="p-2 hover:bg-slate-100/50 dark:hover:bg-white/10 rounded-full transition-all scale-95 active:scale-90 duration-200 text-on-surface-variant flex items-center justify-center"
-            >
-              <AnimatePresence mode="wait">
-                {theme === 'dark' ? (
-                  <motion.div key="moon" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
-                    <Moon size={20} />
-                  </motion.div>
-                ) : (
-                  <motion.div key="sun" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
-                    <Sun size={20} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
+            <ThemeToggle />
             <button
               onClick={handleSearchClick}
+              aria-label="Search"
               className="p-2 hover:bg-slate-100/50 dark:hover:bg-white/10 rounded-full transition-all scale-95 active:scale-90 duration-200 text-on-surface-variant flex items-center justify-center"
             >
               <Search size={20} />
@@ -134,8 +124,8 @@ export default function Navbar() {
               <Link to="/write-blog" className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold text-sm">
                 <PenTool size={16} /> Write
               </Link>
-              <Link to="/my-profile" className="flex items-center gap-2 group hover:text-primary transition-colors">
-                <span className="text-sm font-semibold text-on-surface">{user.name || user.email}</span>
+              <Link to="/my-profile" className="flex items-center gap-2 group hover:text-primary transition-colors max-w-[150px] lg:max-w-xs">
+                <span className="text-sm font-semibold text-on-surface truncate">{user.name || user.email}</span>
               </Link>
               <button onClick={handleLogout} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-outline-variant/50 text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:border-rose-500/50 transition-all">
                 <LogOut size={15} /> Logout
@@ -227,4 +217,6 @@ export default function Navbar() {
       </div>
     </nav>
   );
-}
+});
+
+export default Navbar;

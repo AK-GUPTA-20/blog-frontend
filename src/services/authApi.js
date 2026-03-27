@@ -4,28 +4,47 @@ const BASE_URL = buildApiUrl(`${API_PREFIX}/auth`);
 const TOKEN_KEY = 'velora_token';
 const USER_KEY = 'velora_user';
 
+// Safe localStorage wrappers to prevent synchronous crashes
+const safeStorage = {
+  getItem(key) {
+    if (typeof window === 'undefined') return null;
+    try { return localStorage.getItem(key); }
+    catch (e) { return null; }
+  },
+  setItem(key, value) {
+    if (typeof window === 'undefined') return;
+    try { localStorage.setItem(key, value); }
+    catch (e) {}
+  },
+  removeItem(key) {
+    if (typeof window === 'undefined') return;
+    try { localStorage.removeItem(key); }
+    catch (e) {}
+  }
+};
+
 function buildApiUrl(path) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return API_BASE_URL ? `${API_BASE_URL}${normalizedPath}` : normalizedPath;
 }
 
 function getBearerToken(token) {
-  const rawToken = token || (typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : '');
+  const rawToken = token || safeStorage.getItem(TOKEN_KEY) || '';
   if (!rawToken) return '';
   return rawToken.toLowerCase().startsWith('bearer ') ? rawToken : `Bearer ${rawToken}`;
 }
 
 function storeToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token);
+  if (token) safeStorage.setItem(TOKEN_KEY, token);
 }
 
 function storeUser(user) {
-  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (user) safeStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 function clearStorage() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  safeStorage.removeItem(TOKEN_KEY);
+  safeStorage.removeItem(USER_KEY);
 }
 
 function normalizeString(value) {

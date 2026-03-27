@@ -20,9 +20,9 @@ import {
 } from 'lucide-react';
 import { toast } from '../components/Toast';
 
-// ============================================================================
+  
 // SKELETON COMPONENTS
-// ============================================================================
+  
 
 function AuthorCardSkeleton({ delay = 0 }) {
   return (
@@ -50,9 +50,9 @@ function AuthorCardSkeleton({ delay = 0 }) {
   );
 }
 
-// ============================================================================
+  
 // ANIMATED BACKGROUND
-// ============================================================================
+  
 
 const AnimatedBackground = () => {
   return (
@@ -72,9 +72,9 @@ const AnimatedBackground = () => {
   );
 };
 
-// ============================================================================
+  
 // FILTER & SEARCH COMPONENT
-// ============================================================================
+  
 
 const AuthorFilters = ({ onSearchChange, onFilterChange, totalAuthors }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,6 +102,7 @@ const AuthorFilters = ({ onSearchChange, onFilterChange, totalAuthors }) => {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant w-5 h-5" />
         <input
           type="text"
+          aria-label="Search authors"
           placeholder="Search authors by name or interest..."
           value={searchTerm}
           onChange={handleSearch}
@@ -132,9 +133,9 @@ const AuthorFilters = ({ onSearchChange, onFilterChange, totalAuthors }) => {
   );
 };
 
-// ============================================================================
+  
 // MAIN COMPONENT
-// ============================================================================
+  
 
 export default function Authors() {
   const [authors, setAuthors] = useState([]);
@@ -234,9 +235,9 @@ export default function Authors() {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`;
   };
 
-  // ============================================================================
+    
   // RENDER
-  // ============================================================================
+    
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden pb-24">

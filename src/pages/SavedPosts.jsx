@@ -9,9 +9,9 @@ import { toast } from '../components/Toast';
 // Placeholder image
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3ESaved Post%3C/text%3E%3C/svg%3E';
 
-// ============================================================================
+  
 // SKELETON COMPONENT
-// ============================================================================
+  
 function BlogCardSkeleton({ delay = 0 }) {
   return (
     <motion.article
@@ -49,9 +49,9 @@ function BlogCardSkeleton({ delay = 0 }) {
   );
 }
 
-// ============================================================================
+  
 // MAIN COMPONENT
-// ============================================================================
+  
 export default function SavedPosts() {
   const [savedPosts, setSavedPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,9 +65,9 @@ export default function SavedPosts() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null;
 
-  // ============================================================================
+    
   // LOAD SAVED POSTS
-  // ============================================================================
+    
   const loadSavedPosts = async () => {
     if (!token) {
       toast('Please login to view saved posts', 'info');
@@ -94,17 +94,17 @@ export default function SavedPosts() {
     loadSavedPosts();
   };
 
-  // ============================================================================
+    
   // LOAD ON MOUNT AND PAGE CHANGE
-  // ============================================================================
+    
   useEffect(() => {
     window.scrollTo(0, 0);
     loadSavedPosts();
   }, [currentPage, token]);
 
-  // ============================================================================
+    
   // LOADING STATE
-  // ============================================================================
+    
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
@@ -121,9 +121,9 @@ export default function SavedPosts() {
     );
   }
 
-  // ============================================================================
+    
   // ERROR STATE
-  // ============================================================================
+    
   if (error) {
     return (
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
@@ -179,9 +179,9 @@ export default function SavedPosts() {
     );
   }
 
-  // ============================================================================
+    
   // EMPTY STATE
-  // ============================================================================
+    
   if (savedPosts.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
@@ -227,9 +227,9 @@ export default function SavedPosts() {
     );
   }
 
-  // ============================================================================
+    
   // MAIN CONTENT
-  // ============================================================================
+    
   return (
     <article className="pb-24">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">

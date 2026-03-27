@@ -20,11 +20,23 @@ export default function Home() {
     alert('Thank you for subscribing!');
   };
 
+  React.useEffect(() => {
+    const handleFocusSearch = () => {
+      const searchInput = document.getElementById('home-search-input');
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    window.addEventListener('focusSearch', handleFocusSearch);
+    return () => window.removeEventListener('focusSearch', handleFocusSearch);
+  }, []);
+
   return (
     <div className="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
       <main className="bg-mesh pt-32 min-h-screen">
         {/* Hero Section */}
-        <section className="max-w-7xl mx-auto px-8 mb-32 relative">
+        <section className="max-w-7xl mx-auto px-4 md:px-8 mb-32 relative">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="lg:w-1/2">
               <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase mb-6 border border-primary/20">
@@ -44,16 +56,16 @@ export default function Home() {
                   <span className="font-bold">Explore Archive</span>
                 </Link>
                 <div className="flex -space-x-3">
-                  <img className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="reader" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOFWVSOUPok4ev4YADG2iiqxUWWKAa4aKtajmsZKw4YE_SWOUR3nxsnVoaqrHk9bt5ytB5tNwUwFR_ZIbdAUC1iIKnfgecwpNU5oXoQVZ_CxoPamB8CNq-s255oYWdIjf0YsCO0ES1HB0XOvKzQYr7vFwtQXy1vubh7-47cr3eBUDWa0NnwPVGm99KnQrqFV0yZoB9aEY0igUxCE3d0M5moH3gHdjPOOmBOXqMCiZxMDVs2wKBtAuLWI8X9eqKvBMaBLrucoxHrwGA" />
-                  <img className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="reader" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdbzLEZDWbnrIAkyNsCid_sgeaEDQaByAkyOJxKptk4Hm6cMJvbdskeIaCUqiW0iD4szvdtN7-jdsw4CZIboS1XIKu0UxEys5IdC9HMpMUtCfCp0A3_SFtPHAgcQ7xjT8DQC8XTukINl_PfDC2NWjE_rUCvq9fIcIbJnbntpeylOriXRnphb1hQdWv4y70Z0MM2JR9kqqAwbVWYdrMdOgfEvgKRDjyIFpeM5T2vxaBzo6AUdXEwWI1cyHMNRev-GwCmg_Xtz_zHXpw" />
-                  <img className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="reader" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8tTqYQ9q9yR3050JjmZgTWN0A6Dqs4ko0AsnwUXhazqORo-aW3iL1a2GCGFgXu56Ayvgwl8N8iNkG9D_BBMXZFDM6VAHulftgXSQgQOfur9sDlCVkltgQwWLSQQBWGfT3p13sRiQf0sJqCx--dhdQQk-MzhL-oPwVomL601NKhrUL5Tj2IypjPSKNVDiRSTjBRZp6bNowC8Cfbyu04rCzWP-852Fsy_04ocbF5D6Z4BMyb76LMJc_Gi9MDgHGnBf6AQ_y38kKWQ2O" />
+                  <img loading="lazy" decoding="async" className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="Reader avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOFWVSOUPok4ev4YADG2iiqxUWWKAa4aKtajmsZKw4YE_SWOUR3nxsnVoaqrHk9bt5ytB5tNwUwFR_ZIbdAUC1iIKnfgecwpNU5oXoQVZ_CxoPamB8CNq-s255oYWdIjf0YsCO0ES1HB0XOvKzQYr7vFwtQXy1vubh7-47cr3eBUDWa0NnwPVGm99KnQrqFV0yZoB9aEY0igUxCE3d0M5moH3gHdjPOOmBOXqMCiZxMDVs2wKBtAuLWI8X9eqKvBMaBLrucoxHrwGA" />
+                  <img loading="lazy" decoding="async" className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="Reader avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdbzLEZDWbnrIAkyNsCid_sgeaEDQaByAkyOJxKptk4Hm6cMJvbdskeIaCUqiW0iD4szvdtN7-jdsw4CZIboS1XIKu0UxEys5IdC9HMpMUtCfCp0A3_SFtPHAgcQ7xjT8DQC8XTukINl_PfDC2NWjE_rUCvq9fIcIbJnbntpeylOriXRnphb1hQdWv4y70Z0MM2JR9kqqAwbVWYdrMdOgfEvgKRDjyIFpeM5T2vxaBzo6AUdXEwWI1cyHMNRev-GwCmg_Xtz_zHXpw" />
+                  <img loading="lazy" decoding="async" className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="Reader avatar 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8tTqYQ9q9yR3050JjmZgTWN0A6Dqs4ko0AsnwUXhazqORo-aW3iL1a2GCGFgXu56Ayvgwl8N8iNkG9D_BBMXZFDM6VAHulftgXSQgQOfur9sDlCVkltgQwWLSQQBWGfT3p13sRiQf0sJqCx--dhdQQk-MzhL-oPwVomL601NKhrUL5Tj2IypjPSKNVDiRSTjBRZp6bNowC8Cfbyu04rCzWP-852Fsy_04ocbF5D6Z4BMyb76LMJc_Gi9MDgHGnBf6AQ_y38kKWQ2O" />
                   <div className="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-surface flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+2k</div>
                 </div>
               </div>
             </div>
             <div className="lg:w-1/2 relative">
               <Link to="/post/architecting-for-scale" className="block relative rounded-xl overflow-hidden shadow-2xl group cursor-pointer aspect-[4/3]">
-                <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Hero Featured" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-I1bHS9oylCTEdTmTI9gJ1WrGLMMLU3gDiHejyaaRx4CjES9ikWqnW2FJ7WdCyxhVcmxoZT9E47eTcxzXoxSkjJ2SDR2P3VMJ66MVJBjlwZiPUMUq8_bdKbJsMOhHr5EIPeIlodRGt5GRKIjrhAiAU_UKC63FU0rdAyEbJUBmT-MejQmkPzvGP5LLQeRMFz82kjgNZzeB0R9zppa7GoIkXNKMQTvi8CZPHTgkK4774ptTNm700C0m9_uEol1MQ9ObOemEKh8KC_uH" />
+                <img loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="The Brutalist Revival: Concrete as a Canvas for Light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-I1bHS9oylCTEdTmTI9gJ1WrGLMMLU3gDiHejyaaRx4CjES9ikWqnW2FJ7WdCyxhVcmxoZT9E47eTcxzXoxSkjJ2SDR2P3VMJ66MVJBjlwZiPUMUq8_bdKbJsMOhHr5EIPeIlodRGt5GRKIjrhAiAU_UKC63FU0rdAyEbJUBmT-MejQmkPzvGP5LLQeRMFz82kjgNZzeB0R9zppa7GoIkXNKMQTvi8CZPHTgkK4774ptTNm700C0m9_uEol1MQ9ObOemEKh8KC_uH" />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent opacity-80"></div>
                 <div className="absolute bottom-0 p-6 md:p-10 w-full">
                   <div className="glass-card p-6 md:p-8 rounded-lg border border-white/5 hover:translate-y-[-8px] transition-transform duration-500 shadow-2xl">
@@ -72,12 +84,13 @@ export default function Home() {
         </section>
 
         {/* Search & Filter Section */}
-        <section className="max-w-7xl mx-auto px-8 mb-24">
+        <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
             <form onSubmit={handleSearch} className="relative w-full md:w-96 group">
               <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" />
               <input
                 id="home-search-input"
+                aria-label="Search the archive"
                 className="w-full bg-surface-container-highest border-none rounded-md py-4 pl-12 pr-6 text-on-surface focus:ring-2 focus:ring-primary/50 placeholder:text-on-surface-variant transition-all outline-none"
                 placeholder="Search the archive..."
                 type="text"
@@ -96,7 +109,7 @@ export default function Home() {
         </section>
 
         {/* Latest Insights Bento Grid */}
-        <section className="max-w-7xl mx-auto px-8 mb-32">
+        <section className="max-w-7xl mx-auto px-4 md:px-8 mb-32">
           <div className="flex justify-between items-end mb-12">
             <div>
               <h2 className="font-headline text-4xl font-bold tracking-tight mb-2">Latest Insights</h2>
@@ -111,13 +124,13 @@ export default function Home() {
             {/* Large Card */}
             {latestPosts[0] && (
               <Link to={`/post/${latestPosts[0].slug}`} className="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-low h-[400px] md:h-[500px]">
-                <img className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105" alt={latestPosts[0].title} src={latestPosts[0].image} />
+                <img loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105" alt={latestPosts[0].title} src={latestPosts[0].image} />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
                 <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end">
                   <span className="bg-primary/20 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs font-bold w-fit mb-6 uppercase">{latestPosts[0].category}</span>
                   <h3 className="font-headline text-3xl md:text-4xl font-bold mb-6 max-w-xl group-hover:text-primary transition-colors line-clamp-3">{latestPosts[0].title}</h3>
                   <div className="flex items-center gap-4">
-                    <img className="w-10 h-10 rounded-full" alt={latestPosts[0].author.name} src={latestPosts[0].author.avatar} />
+                    <img loading="lazy" decoding="async" className="w-10 h-10 rounded-full" alt={latestPosts[0].author.name} src={latestPosts[0].author.avatar} />
                     <div>
                       <p className="font-bold text-sm">{latestPosts[0].author.name}</p>
                       <p className="text-xs text-on-surface-variant">{latestPosts[0].date} • {latestPosts[0].readTime}</p>
@@ -150,7 +163,7 @@ export default function Home() {
         </section>
 
         {/* Featured Minds Section */}
-        <section className="max-w-7xl mx-auto px-8 mb-24">
+        <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24">
           <div className="flex justify-between items-end mb-12">
             <div>
               <h2 className="font-headline text-4xl font-bold tracking-tight mb-2">Featured Minds</h2>
@@ -165,7 +178,7 @@ export default function Home() {
             {topBlogs.map((blog) => (
               <div key={`mind-${blog.id}`} className="flex flex-col items-center gap-4 group cursor-pointer">
                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-[6px] border-surface-container-high group-hover:border-primary transition-colors shadow-xl">
-                  <img src={blog.author.avatar} alt={blog.author.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110" />
+                  <img loading="lazy" decoding="async" src={blog.author.avatar} alt={blog.author.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110" />
                 </div>
                 <div className="text-center">
                   <h4 className="font-headline font-bold text-xl mb-1">{blog.author.name}</h4>
@@ -178,7 +191,7 @@ export default function Home() {
 
         {/* Top Blogs Section (Based on Featured Minds) */}
         <section className="bg-surface-container-low py-32 rounded-[4rem] mb-32 mx-4">
-          <div className="max-w-7xl mx-auto px-8">
+          <div className="max-w-7xl mx-auto px-4 md:px-8">
             <div className="text-center mb-20">
               <h2 className="font-headline text-4xl font-extrabold mb-4">Top Blogs</h2>
               <p className="text-on-surface-variant text-lg">The voices defining our editorial direction.</p>
@@ -196,7 +209,7 @@ export default function Home() {
                   <div key={blog.id} className={`bg-surface p-8 rounded-xl text-center group hover:translate-y-[-10px] transition-all duration-300 border border-transparent relative overflow-hidden before:absolute before:inset-0 ${colors[idx % colors.length]}`}>
                     <div className="relative w-24 h-24 mx-auto mb-6">
                       {/* Using blog image instead of author for this requirement */}
-                      <img className="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={blog.title} src={blog.image} />
+                      <img loading="lazy" decoding="async" className="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={blog.title} src={blog.image} />
                       <div className="absolute inset-0 rounded-full ring-2 ring-primary ring-offset-4 ring-offset-surface opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
                     <h4 className="font-headline font-bold text-lg mb-1 line-clamp-1" title={blog.title}>{blog.title}</h4>
@@ -213,7 +226,7 @@ export default function Home() {
         </section>
 
         {/* Newsletter Section */}
-        <section className="max-w-7xl mx-auto px-8 mb-32">
+        <section className="max-w-7xl mx-auto px-4 md:px-8 mb-32">
           <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-surface-container-high to-surface-container-highest p-1 md:p-12">
             <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
             <div className="relative flex flex-col lg:flex-row items-center justify-between gap-12 bg-surface/80 backdrop-blur-3xl rounded-[2.5rem] p-12 md:p-20 border border-white/5">
@@ -225,7 +238,7 @@ export default function Home() {
               </div>
               <div className="w-full lg:w-auto">
                 <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 w-full">
-                  <input required className="px-8 py-5 rounded-full bg-surface-bright border-none focus:ring-2 focus:ring-primary/50 text-on-surface w-full sm:w-80 outline-none" placeholder="Your best email address" type="email" />
+                  <input required aria-label="Email address for newsletter" className="px-8 py-5 rounded-full bg-surface-bright border-none focus:ring-2 focus:ring-primary/50 text-on-surface w-full sm:w-80 outline-none" placeholder="Your best email address" type="email" />
                   <button type="submit" className="px-10 py-5 bg-primary text-on-primary rounded-full font-bold text-lg hover:shadow-[0_0_20px_rgba(255,221,121,0.4)] transition-all active:scale-95 whitespace-nowrap">
                     Subscribe Now
                   </button>

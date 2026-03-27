@@ -6,15 +6,15 @@ import { getAllPosts, getPostsByCategory } from '../services/postApi';
 import { AlertCircle, RefreshCw, BookOpen, Eye, Flame, TrendingUp, Filter, X } from 'lucide-react';
 import { toast } from '../components/Toast';
 
-// ============================================================================
+  
 // PLACEHOLDER IMAGE - NO EXTERNAL REQUESTS
-// ============================================================================
+  
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3EArticle Image%3C/text%3E%3C/svg%3E';
 
-// ============================================================================
+  
 // SKELETON COMPONENTS
-// ============================================================================
+  
 
 function BlogCardSkeleton({ delay = 0 }) {
   return (
@@ -55,9 +55,9 @@ function BlogCardSkeleton({ delay = 0 }) {
   );
 }
 
-// ============================================================================
+  
 // STATE COMPONENTS
-// ============================================================================
+  
 
 function ErrorState({ error, onRetry }) {
   return (
@@ -126,9 +126,9 @@ function LoadingIndicator() {
   );
 }
 
-// ============================================================================
+  
 // HEADER SECTION COMPONENT
-// ============================================================================
+  
 
 function HeaderSection({ blogCount }) {
   return (
@@ -183,9 +183,9 @@ function HeaderSection({ blogCount }) {
   );
 }
 
-// ============================================================================
+  
 // MAIN COMPONENT
-// ============================================================================
+  
 
 export default function Blogs() {
   const [blogs, setBlogs] = useState([]);

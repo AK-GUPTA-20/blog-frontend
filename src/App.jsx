@@ -1,24 +1,34 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import React, { Suspense } from "react"
 import { ThemeProvider } from "./components/ThemeProvider"
 import Navbar from "./components/Navbar"
 import Footer from "./components/Footer"
 import LenisProvider from "./components/LenisProvider"
 import { AuthProvider } from "./context/AuthContext"
 import { ToastContainer } from "./components/Toast"
+import { Loader2 } from 'lucide-react';
 
-import Home from "./pages/Home"
-import Post from "./pages/Post"
-import Categories from "./pages/Categories"
-import About from "./pages/About"
-import Blogs from "./pages/Blogs"
-import Authors from "./pages/Authors"
-import Login from "./pages/Login"
-import Register from "./pages/Register"
-import OtpVerify from "./pages/OtpVerify"
-import MyProfile from "./pages/MyProfile"
-import WriteBlog from "./pages/WriteBlog"
-import AuthorProfile from './pages/AuthorProfile';
-import SavedPosts from "./pages/SavedPosts"
+const Home = React.lazy(() => import("./pages/Home"));
+const Post = React.lazy(() => import("./pages/Post"));
+const Categories = React.lazy(() => import("./pages/Categories"));
+const About = React.lazy(() => import("./pages/About"));
+const Blogs = React.lazy(() => import("./pages/Blogs"));
+const Authors = React.lazy(() => import("./pages/Authors"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Register = React.lazy(() => import("./pages/Register"));
+const OtpVerify = React.lazy(() => import("./pages/OtpVerify"));
+const MyProfile = React.lazy(() => import("./pages/MyProfile"));
+const WriteBlog = React.lazy(() => import("./pages/WriteBlog"));
+const AuthorProfile = React.lazy(() => import("./pages/AuthorProfile"));
+const SavedPosts = React.lazy(() => import("./pages/SavedPosts"));
+
+function PageLoader() {
+  return (
+    <div className="flex h-[50vh] items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -30,22 +40,24 @@ function App() {
             <div className="flex flex-col min-h-screen">
               <Navbar />
               <main className="flex-1 pt-24">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/post/:slug" element={<Post />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/blogs" element={<Blogs />} />
-                  <Route path="/authors" element={<Authors />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/verify-otp" element={<OtpVerify />} />
-                  <Route path="/my-profile" element={<MyProfile />} />
-                  <Route path="/write-blog" element={<WriteBlog />} />
-                  <Route path="/write-blog/:id" element={<WriteBlog />} />
-                  <Route path="/author-profile/:authorId" element={<AuthorProfile />} />
-                  <Route path="/saved-posts" element={<SavedPosts />} />
-                </Routes>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/post/:slug" element={<Post />} />
+                    <Route path="/categories" element={<Categories />} />
+                    <Route path="/blogs" element={<Blogs />} />
+                    <Route path="/authors" element={<Authors />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/verify-otp" element={<OtpVerify />} />
+                    <Route path="/my-profile" element={<MyProfile />} />
+                    <Route path="/write-blog" element={<WriteBlog />} />
+                    <Route path="/write-blog/:id" element={<WriteBlog />} />
+                    <Route path="/author-profile/:authorId" element={<AuthorProfile />} />
+                    <Route path="/saved-posts" element={<SavedPosts />} />
+                  </Routes>
+                </Suspense>
               </main>
               <Footer />
             </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Share2, Bookmark, Heart, ArrowLeft, Clock, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
+import DOMPurify from 'dompurify';
 import { Skeleton } from '../components/ui/skeleton';
 import { toast } from '../components/Toast';
 import { getPostBySlug, likePost, savePost } from '../services/postApi';
@@ -43,6 +44,43 @@ function PostSkeleton() {
   );
 }
 
+const PostActions = ({ likes, isLiked, isLiking, handleLike, handleSave, handleShare }) => (
+  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max lg:static lg:translate-x-0 lg:w-full">
+    <div className="flex lg:flex-col items-center gap-4 lg:gap-6 glass-card px-6 py-3 lg:py-6 rounded-full lg:w-16 lg:mx-auto lg:sticky lg:top-32 shadow-xl border border-outline-variant/30 bg-background/80 backdrop-blur-xl">
+      <button
+        onClick={handleLike}
+        disabled={isLiking}
+        className={`flex lg:flex-col items-center gap-1.5 lg:gap-1 p-2 rounded-lg transition-colors ${
+          isLiked
+            ? 'text-primary'
+            : 'text-on-surface-variant hover:text-primary'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title={`${likes} likes`}
+      >
+        <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
+        {likes > 0 && <span className="text-sm lg:text-xs font-semibold lg:font-normal">{likes}</span>}
+      </button>
+      <div className="w-px h-6 lg:w-8 lg:h-px bg-outline-variant lg:my-2" />
+      <button 
+        onClick={handleSave}
+        className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg cursor-not-allowed opacity-50" 
+        title="This feature is not allowed yet"
+        disabled
+      >
+        <Bookmark size={20} />
+      </button>
+      <div className="w-px h-4 lg:hidden bg-outline-variant/50" />
+      <button 
+        onClick={handleShare}
+        className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg" 
+        title="Share post"
+      >
+        <Share2 size={20} />
+      </button>
+    </div>
+  </div>
+);
+
 export default function Post() {
   const { slug } = useParams();
   const location = useLocation();
@@ -59,8 +97,13 @@ export default function Post() {
   //   Use ref to prevent double fetch in Strict Mode
   const fetchedRef = useRef(false);
 
-  // Get token from localStorage
-  const token = typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null;
+  // Get token from localStorage (safe)
+  const getToken = () => {
+    try {
+      return typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null;
+    } catch (e) { return null; }
+  };
+  const token = getToken();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -117,13 +160,17 @@ export default function Post() {
       setLikes(newLikes);
       
       if (typeof window !== 'undefined') {
-        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
-        if (newIsLiked) {
-          likedPosts[postId] = true;
-        } else {
-          delete likedPosts[postId];
+        try {
+          const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
+          if (newIsLiked) {
+            likedPosts[postId] = true;
+          } else {
+            delete likedPosts[postId];
+          }
+          localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+        } catch (e) {
+          console.warn('LocalStorage error', e);
         }
-        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
       }
       
       toast(newIsLiked ? 'Post liked!' : 'Post unliked', 'success');
@@ -134,12 +181,16 @@ export default function Post() {
     }
   };
 
-  // Load liked posts from localStorage on mount
+  // Load liked posts from localStorage on mount (safe)
   useEffect(() => {
     if (postId && token && typeof window !== 'undefined') {
-      const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
-      if (likedPosts[postId]) {
-        setIsLiked(true);
+      try {
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
+        if (likedPosts[postId]) {
+          setIsLiked(true);
+        }
+      } catch (e) {
+        console.warn('LocalStorage error', e);
       }
     }
   }, [postId, token]);
@@ -247,39 +298,16 @@ export default function Post() {
       </div>
 
       <div className="layout-container mt-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Sidebar Actions - Desktop Only */}
-        <div className="hidden lg:block lg:col-span-2 relative">
-          <div className="sticky top-32 flex flex-col items-center gap-6 glass-card py-6 rounded-full w-16 mx-auto">
-            <button
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
-                isLiked
-                  ? 'text-primary'
-                  : 'text-on-surface-variant hover:text-primary'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={`${likes} likes`}
-            >
-              <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
-              {likes > 0 && <span className="text-xs">{likes}</span>}
-            </button>
-            <div className="w-8 h-px bg-outline-variant my-2" />
-            <button 
-              onClick={handleSave}
-              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg cursor-not-allowed opacity-50" 
-              title="This feature is not allowed yet"
-              disabled
-            >
-              <Bookmark size={20} />
-            </button>
-            <button 
-              onClick={handleShare}
-              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg" 
-              title="Share post"
-            >
-              <Share2 size={20} />
-            </button>
-          </div>
+        {/* Responsive Actions Bar */}
+        <div className="lg:col-span-2 relative">
+          <PostActions 
+            likes={likes}
+            isLiked={isLiked}
+            isLiking={isLiking}
+            handleLike={handleLike}
+            handleSave={handleSave}
+            handleShare={handleShare}
+          />
         </div>
 
         {/* Content */}
@@ -321,13 +349,7 @@ export default function Post() {
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none font-body text-on-surface-variant leading-loose">
             {content ? (
-              content.split('\n').map((paragraph, index) => (
-                paragraph.trim() && (
-                  <p key={index} className="mb-6">
-                    {paragraph}
-                  </p>
-                )
-              ))
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
             ) : (
               <p>No content available for this post.</p>
             )}
@@ -363,42 +385,6 @@ export default function Post() {
             <div className="bg-surface-container-low rounded-2xl p-4 text-center">
               <p className="text-2xl font-headline font-bold text-on-surface">{readingTime}</p>
               <p className="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Min Read</p>
-            </div>
-          </div>
-
-          {/* Mobile Action Buttons - Visible on Mobile Only */}
-          <div className="lg:hidden mt-12 pt-8 border-t border-outline-variant/30">
-            <div className="flex items-center justify-around gap-4">
-              <button
-                onClick={handleLike}
-                disabled={isLiking}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isLiked
-                    ? 'bg-primary/10 text-primary'
-                    : 'glass-card hover:bg-surface-bright text-on-surface-variant hover:text-primary'
-                }`}
-                title={`${likes} likes`}
-              >
-                <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
-                <span className="text-sm font-semibold">{likes}</span>
-              </button>
-              <button 
-                onClick={handleSave}
-                disabled
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass-card text-on-surface-variant opacity-50 cursor-not-allowed" 
-                title="This feature is not allowed yet"
-              >
-                <Bookmark size={20} />
-                <span className="text-sm font-semibold">Save</span>
-              </button>
-              <button 
-                onClick={handleShare}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass-card hover:bg-surface-bright transition-colors text-on-surface-variant hover:text-primary" 
-                title="Share post"
-              >
-                <Share2 size={20} />
-                <span className="text-sm font-semibold">Share</span>
-              </button>
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, Image as ImageIcon, X } from 'lucide-react';
-import { createPost, updatePost, getPostById } from '../services/blogApi';
+import { createPost, updatePost, getPostById } from '../services/postApi';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
 import { Button } from '../components/ui/button';
@@ -172,12 +172,12 @@ export default function WriteBlog() {
         <div className="space-y-6">
           <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6">
             <div>
-              <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                Post Title
+              <label htmlFor="title" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Post Title
               </label>
               <input
                 type="text"
-                name="title"
+                id="title" name="title"
                 value={form.title}
                 onChange={handleChange}
                 placeholder="Enter your blog post title..."
@@ -186,11 +186,11 @@ export default function WriteBlog() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                Description (Short summary)
+              <label htmlFor="description" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Description (Short summary)
               </label>
               <textarea
-                name="description"
+                id="description" name="description"
                 value={form.description}
                 onChange={handleChange}
                 placeholder="Write a brief description of your post..."
@@ -200,10 +200,10 @@ export default function WriteBlog() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                Content
+              <label htmlFor="content" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Content
               </label>
-              <textarea
+              <textarea id="content"
                 name="content"
                 value={form.content}
                 onChange={handleChange}
@@ -214,11 +214,11 @@ export default function WriteBlog() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                Featured Image
+              <label htmlFor="image" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Featured Image
               </label>
               <div className="relative border-2 border-dashed border-outline-variant/40 rounded-xl p-6 hover:border-primary/40 transition-colors cursor-pointer group">
-                <input
+                <input id="image"
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
@@ -251,10 +251,10 @@ export default function WriteBlog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                  Category
+                <label htmlFor="category" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                    Category
                 </label>
-                <select
+                <select id="category"
                   name="category"
                   value={form.category}
                   onChange={handleChange}
@@ -267,10 +267,10 @@ export default function WriteBlog() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                  Status
+                <label htmlFor="status" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                    Status
                 </label>
-                <select
+                <select id="status"
                   name="status"
                   value={form.status}
                   onChange={handleChange}
@@ -285,12 +285,12 @@ export default function WriteBlog() {
 
             {form.status === 'scheduled' && (
               <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                  Publish Date
+                <label htmlFor="publishedAt" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                    Publish Date
                 </label>
                 <input
                   type="date"
-                  name="publishedAt"
+                  id="publishedAt" name="publishedAt"
                   value={form.publishedAt}
                   onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl border border-outline-variant/45 bg-surface-container/70 text-on-surface outline-none focus:border-primary transition-all"
@@ -299,12 +299,13 @@ export default function WriteBlog() {
             )}
 
             <div>
-              <label className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                Tags
+              <label htmlFor="tags" className="block text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                  Tags
               </label>
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
+                  id="tags"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}

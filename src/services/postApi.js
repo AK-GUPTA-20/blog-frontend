@@ -78,6 +78,11 @@ export async function getPostBySlug(slug) {
   return parseResponse(res, 'Failed to fetch post.');
 }
 
+export async function getPostById(postId) {
+  const res = await apiFetch(`${POST_BASE_URL}/${postId}`);
+  return parseResponse(res, 'Failed to fetch post.');
+}
+
 export async function getPostsByCategory(category, page = 1, limit = 10) {
   const params = new URLSearchParams({ page, limit });
   const res = await apiFetch(`${POST_BASE_URL}/category/${category}?${params}`);

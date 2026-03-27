@@ -9,15 +9,15 @@ import {
 } from 'lucide-react';
 import { toast } from '../components/Toast';
 
-// ============================================================================
+  
 // PLACEHOLDER IMAGE
-// ============================================================================
+  
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3EArticle%3C/text%3E%3C/svg%3E';
 
-// ============================================================================
+  
 // ANIMATED BACKGROUND COMPONENT
-// ============================================================================
+  
 
 const AnimatedBackground = () => {
   return (
@@ -45,9 +45,9 @@ const AnimatedBackground = () => {
   );
 };
 
-// ============================================================================
+  
 // SKELETON COMPONENTS
-// ============================================================================
+  
 
 function ProfileSkeleton() {
   return (
@@ -90,9 +90,9 @@ function PostCardSkeleton({ delay = 0 }) {
   );
 }
 
-// ============================================================================
+  
 // STATS CARD COMPONENT WITH COUNTER ANIMATION
-// ============================================================================
+  
 
 const StatsCard = ({ icon: Icon, label, value, delay, color = 'blue' }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -167,9 +167,9 @@ const StatsCard = ({ icon: Icon, label, value, delay, color = 'blue' }) => {
   );
 };
 
-// ============================================================================
+  
 // ENGAGEMENT METRIC COMPONENT
-// ============================================================================
+  
 
 const EngagementMetric = ({ label, value, icon: Icon, percentage }) => {
   return (
@@ -194,9 +194,9 @@ const EngagementMetric = ({ label, value, icon: Icon, percentage }) => {
   );
 };
 
-// ============================================================================
+  
 // ACHIEVEMENT BADGE COMPONENT
-// ============================================================================
+  
 
 const AchievementBadge = ({ icon: Icon, title, description, delay }) => {
   return (
@@ -220,9 +220,9 @@ const AchievementBadge = ({ icon: Icon, title, description, delay }) => {
   );
 };
 
-// ============================================================================
+  
 // MAIN COMPONENT
-// ============================================================================
+  
 
 export default function AuthorProfile() {
   const { authorId } = useParams();
@@ -335,9 +335,9 @@ export default function AuthorProfile() {
     toast('Profile downloaded!', 'success');
   };
 
-  // ============================================================================
+    
   // LOADING STATE
-  // ============================================================================
+    
 
   if (isLoadingAuthor) {
     return (
@@ -363,9 +363,9 @@ export default function AuthorProfile() {
     );
   }
 
-  // ============================================================================
+    
   // ERROR STATE
-  // ============================================================================
+    
 
   if (error) {
     return (
@@ -420,9 +420,9 @@ export default function AuthorProfile() {
     );
   }
 
-  // ============================================================================
+    
   // MAIN CONTENT
-  // ============================================================================
+    
 
   return (
     <article className="relative min-h-screen bg-background overflow-hidden">
@@ -958,6 +958,7 @@ export default function AuthorProfile() {
               <form onSubmit={handleNewsletterSubmit} className="flex gap-3 mb-4 flex-col sm:flex-row max-w-md mx-auto">
                 <input
                   type="email"
+                  aria-label="Email for newsletter subscription"
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

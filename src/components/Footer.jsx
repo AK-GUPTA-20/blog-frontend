@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MessageCircle, Share2, Globe } from 'lucide-react';
+import { APP_CONFIG } from '../constants';
 
-export default function Footer() {
+const Footer = memo(function Footer() {
   return (
     <footer className="bg-surface-container-low pt-24 pb-12 mt-20 border-t border-border/50">
       <div className="layout-container">
@@ -19,7 +20,7 @@ export default function Footer() {
             </p>
             <div className="flex space-x-4">
               {[Mail, MessageCircle, Share2, Globe].map((Icon, idx) => (
-                <a key={idx} href="#" className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                <a key={idx} href="#" aria-label={`Social icon ${idx + 1}`} className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
                   <Icon size={18} />
                 </a>
               ))}
@@ -48,7 +49,7 @@ export default function Footer() {
         </div>
         
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border/50 text-sm font-label text-muted-foreground uppercase tracking-widest">
-          <p>&copy; {new Date().getFullYear()} Velora Journal. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {APP_CONFIG.APP_NAME}. All rights reserved.</p>
           <div className="flex justify-center space-x-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
@@ -57,4 +58,6 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+});
+
+export default Footer;
