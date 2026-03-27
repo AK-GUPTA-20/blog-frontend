@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Share2, Bookmark, Heart, ArrowLeft, Clock, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -47,14 +47,17 @@ export default function Post() {
   const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [post, setPost] = useState(location.state?.post || null);
-  const [isLoading, setIsLoading] = useState(!post);
+  const [post, setPost] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
   const [views, setViews] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
   const [postId, setPostId] = useState(null);
+  
+  //   Use ref to prevent double fetch in Strict Mode
+  const fetchedRef = useRef(false);
 
   // Get token from localStorage
   const token = typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null;
@@ -63,34 +66,23 @@ export default function Post() {
     window.scrollTo(0, 0);
   }, [slug]);
 
-  // Fetch post data
   useEffect(() => {
-    if (post) {
-      const postData = post.data || post;
-      setPostId(postData._id);
-      setLikes(postData?.stats?.likes || 0);
-      setViews(postData?.stats?.views || 0);
-      // Check if user has already liked this post
-      setIsLiked(postData?.isLiked || postData?.userLiked || false);
-      return;
-    }
-
+    if (fetchedRef.current) return;
+    
     const fetchPost = async () => {
       setIsLoading(true);
       setError(null);
       try {
         const data = await getPostBySlug(slug);
-        console.log('📄 Post data:', data);
         const postData = data.data || data;
         
         setPost(data);
         setPostId(postData._id);
-        setLikes(postData?.stats?.likes || 0);
         setViews(postData?.stats?.views || 0);
-        // Check if user has already liked this post (from API response)
+        setLikes(postData?.stats?.likes || 0);
         setIsLiked(postData?.isLiked || postData?.userLiked || false);
+        
       } catch (err) {
-        console.error('✗ Error fetching post:', err);
         setError(err);
       } finally {
         setIsLoading(false);
@@ -98,7 +90,9 @@ export default function Post() {
     };
 
     fetchPost();
-  }, [slug, post]);
+    fetchedRef.current = true;
+    
+  }, [slug]);
 
   // Handle like button click
   const handleLike = async () => {
@@ -116,16 +110,12 @@ export default function Post() {
     setIsLiking(true);
     try {
       const result = await likePost(token, postId);
-      console.log('✓ Like response:', result);
-      
-      // API returns { success, message, isLiked, likes }
       const newIsLiked = result?.isLiked ?? !isLiked;
       const newLikes = result?.likes ?? likes;
       
       setIsLiked(newIsLiked);
       setLikes(newLikes);
       
-      // Store in localStorage to persist across refreshes
       if (typeof window !== 'undefined') {
         const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
         if (newIsLiked) {
@@ -137,9 +127,7 @@ export default function Post() {
       }
       
       toast(newIsLiked ? 'Post liked!' : 'Post unliked', 'success');
-      console.log(`✓ Post ${newIsLiked ? 'liked' : 'unliked'} - Total likes: ${newLikes}`);
     } catch (err) {
-      console.error('✗ Error liking post:', err);
       toast(err.message || 'Failed to like post', 'error');
     } finally {
       setIsLiking(false);
@@ -164,7 +152,6 @@ export default function Post() {
       return;
     }
 
-    // Show "not allowed yet" message
     toast('This feature is not allowed yet', 'info');
   };
 

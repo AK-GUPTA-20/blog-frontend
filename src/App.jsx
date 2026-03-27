@@ -17,6 +17,8 @@ import Register from "./pages/Register"
 import OtpVerify from "./pages/OtpVerify"
 import MyProfile from "./pages/MyProfile"
 import WriteBlog from "./pages/WriteBlog"
+import AuthorProfile from './pages/AuthorProfile';
+import SavedPosts from "./pages/SavedPosts"
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function App() {
                   <Route path="/my-profile" element={<MyProfile />} />
                   <Route path="/write-blog" element={<WriteBlog />} />
                   <Route path="/write-blog/:id" element={<WriteBlog />} />
+                  <Route path="/author-profile/:authorId" element={<AuthorProfile />} />
+                  <Route path="/saved-posts" element={<SavedPosts />} />
                 </Routes>
               </main>
               <Footer />

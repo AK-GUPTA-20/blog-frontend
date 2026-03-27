@@ -23,6 +23,10 @@ import {
   Lock,
   Trash2,
   AlertTriangle,
+  Bookmark,
+  Star,
+  ExternalLink,
+  Eye,
 } from 'lucide-react';
 import { FaGithub, FaLinkedinIn } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
@@ -38,6 +42,7 @@ import {
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getMyProfile, updateMyProfile, uploadProfileImage, changePassword, deleteAccount } from '../services/authApi';
+import { getMySavedPosts } from '../services/postApi';
 import { toast } from '../components/Toast';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -45,6 +50,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
+// ============================================================================
+// PLACEHOLDER IMAGE
+// ============================================================================
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3ESaved Post%3C/text%3E%3C/svg%3E';
+
+// ============================================================================
+// STAT CARD COMPONENT
+// ============================================================================
 function StatCard({ icon: Icon, value, label, delay = 0 }) {
   return (
     <motion.div
@@ -64,6 +77,9 @@ function StatCard({ icon: Icon, value, label, delay = 0 }) {
   );
 }
 
+// ============================================================================
+// PROFILE FIELD COMPONENT
+// ============================================================================
 function ProfileField({ icon: Icon, label, value }) {
   if (!value) return null;
   return (
@@ -77,6 +93,9 @@ function ProfileField({ icon: Icon, label, value }) {
   );
 }
 
+// ============================================================================
+// FORMAT DATE HELPER
+// ============================================================================
 function formatDisplayDate(value, withTime = false) {
   if (!value) return 'N/A';
 
@@ -88,6 +107,9 @@ function formatDisplayDate(value, withTime = false) {
   });
 }
 
+// ============================================================================
+// CREATE ENGAGEMENT SERIES
+// ============================================================================
 function createEngagementSeries(profile) {
   const base = Math.max(4, profile?.totalPosts || 6);
   const labels = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
@@ -102,6 +124,9 @@ function createEngagementSeries(profile) {
   });
 }
 
+// ============================================================================
+// CREATE ACTIVITY TIMELINE
+// ============================================================================
 function createActivity(profile) {
   const created = profile?.createdAt || Date.now();
   const lastLogin = profile?.lastLoginAt || Date.now();
@@ -138,6 +163,9 @@ function createActivity(profile) {
   ];
 }
 
+// ============================================================================
+// GENERATE PEOPLE PAGE
+// ============================================================================
 function generatePeoplePage(profile, kind, pageParam = 0) {
   const total = kind === 'followers' ? profile.totalFollowers : profile.totalFollowing;
   const pageSize = 12;
@@ -164,6 +192,9 @@ function generatePeoplePage(profile, kind, pageParam = 0) {
   });
 }
 
+// ============================================================================
+// SOCIAL PILL COMPONENT
+// ============================================================================
 function SocialPill({ label, url, icon: Icon }) {
   if (!url) return null;
 
@@ -180,10 +211,16 @@ function SocialPill({ label, url, icon: Icon }) {
   );
 }
 
+// ============================================================================
+// GET NORMALIZED USER
+// ============================================================================
 function getNormalizedUser(payload) {
   return payload?.user || payload?.data?.user || payload?.data || null;
 }
 
+// ============================================================================
+// NORMALIZE GENDER CODE
+// ============================================================================
 function normalizeGenderCode(value) {
   const raw = String(value || '').trim().toLowerCase();
   if (raw === 'm' || raw === 'male') return 'M';
@@ -191,6 +228,9 @@ function normalizeGenderCode(value) {
   return 'O';
 }
 
+// ============================================================================
+// GET GENDER LABEL
+// ============================================================================
 function getGenderLabel(value) {
   const raw = String(value || '').trim();
   if (!raw) return 'Not specified';
@@ -203,11 +243,17 @@ function getGenderLabel(value) {
   return raw;
 }
 
+// ============================================================================
+// IS CUSTOM GENDER
+// ============================================================================
 function isCustomGender(value) {
   const raw = String(value || '').trim().toLowerCase();
   return Boolean(raw) && !['m', 'male', 'f', 'female', 'o', 'other'].includes(raw);
 }
 
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 export default function MyProfile() {
   const navigate = useNavigate();
   const { user: authUser, token, login, logout } = useAuth();
@@ -217,6 +263,8 @@ export default function MyProfile() {
   const [editOpen, setEditOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [savedPostsData, setSavedPostsData] = useState([]);
+  const [savedPostsLoading, setSavedPostsLoading] = useState(false);
   const [draft, setDraft] = useState({
     name: '',
     bio: '',
@@ -292,6 +340,27 @@ export default function MyProfile() {
 
     toast('Unable to load your profile right now.', 'error');
   }, [error?.status, isError, logout, navigate]);
+
+  //   LOAD SAVED POSTS
+  const loadSavedPosts = async () => {
+    if (!token) return;
+    setSavedPostsLoading(true);
+    try {
+      const response = await getMySavedPosts(token, 1, 6);
+      setSavedPostsData(response?.data || []);
+    } catch (err) {
+      console.error('Error loading saved posts:', err);
+    } finally {
+      setSavedPostsLoading(false);
+    }
+  };
+
+  //   LOAD SAVED POSTS WHEN TAB ACTIVE
+  useEffect(() => {
+    if (activeTab === 'saved' && token) {
+      loadSavedPosts();
+    }
+  }, [activeTab, token]);
 
   useEffect(() => {
     if (activeTab !== 'overview') return;
@@ -522,6 +591,9 @@ export default function MyProfile() {
     deleteAccountMutation.mutate();
   };
 
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
   if (isLoading) {
     return (
       <div className="relative min-h-screen overflow-hidden bg-background px-4 pb-24 pt-8">
@@ -542,6 +614,9 @@ export default function MyProfile() {
 
   if (!profile) return null;
 
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -553,6 +628,7 @@ export default function MyProfile() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(at_12%_18%,hsl(var(--primary)/0.16)_0px,transparent_46%),radial-gradient(at_88%_12%,hsl(var(--accent)/0.12)_0px,transparent_44%)]" />
 
       <div className="relative mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+        {/* PROFILE HEADER */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -639,19 +715,25 @@ export default function MyProfile() {
           </div>
         </motion.div>
 
+        {/* STATS CARDS */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard icon={BookOpen} value={profile.totalPosts} label="Posts" />
           <StatCard icon={Users} value={profile.totalFollowers} label="Followers" delay={0.05} />
           <StatCard icon={UserPlus} value={profile.totalFollowing} label="Following" delay={0.1} />
         </div>
 
+        {/* TABS */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="network">Network</TabsTrigger>
+            <TabsTrigger value="saved">
+              <Bookmark size={15} /> Saved Posts
+            </TabsTrigger>
           </TabsList>
 
+          {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -733,6 +815,7 @@ export default function MyProfile() {
             </motion.div>
           </TabsContent>
 
+          {/* ACTIVITY TAB */}
           <TabsContent value="activity">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -773,6 +856,7 @@ export default function MyProfile() {
             </motion.div>
           </TabsContent>
 
+          {/* NETWORK TAB */}
           <TabsContent value="network" className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <Button
@@ -879,8 +963,139 @@ export default function MyProfile() {
               )}
             </AnimatePresence>
           </TabsContent>
+
+          {/*   SAVED POSTS TAB */}
+          <TabsContent value="saved" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.45 }}
+            >
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <div className="flex items-center gap-3 justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bookmark className="text-primary" size={18} fill="currentColor" />
+                      <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-widest text-on-surface-variant">
+                        Reading List
+                      </CardTitle>
+                    </div>
+                    <Link
+                      to="/saved-posts"
+                      className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      View All <ExternalLink size={12} />
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {savedPostsLoading ? (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-64 w-full rounded-2xl" />
+                      ))}
+                    </div>
+                  ) : savedPostsData.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex flex-col items-center justify-center py-12 text-center"
+                    >
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
+                        <Bookmark className="w-8 h-8 text-primary/50" />
+                      </div>
+                      <p className="text-sm text-on-surface-variant mb-3">No saved posts yet</p>
+                      <Link
+                        to="/blogs"
+                        className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Start saving posts →
+                      </Link>
+                    </motion.div>
+                  ) : (
+                    <>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {savedPostsData.map((post, idx) => (
+                          <motion.div
+                            key={post._id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className="group relative rounded-2xl overflow-hidden border border-primary/20 hover:border-primary/40 transition-all duration-300 bg-surface-container-low"
+                          >
+                            {/* Image */}
+                            <Link
+                              to={`/post/${post.slug}`}
+                              state={{ post }}
+                              className="block relative h-40 overflow-hidden bg-surface-container"
+                            >
+                              <img
+                                src={post.featuredImage || PLACEHOLDER_IMAGE}
+                                alt={post.title}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                onError={(e) => (e.target.src = PLACEHOLDER_IMAGE)}
+                              />
+                              {/* Overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                                <span className="text-xs font-semibold text-white">Read Post →</span>
+                              </div>
+                            </Link>
+
+                            {/* Content */}
+                            <div className="p-3">
+                              <Link
+                                to={`/post/${post.slug}`}
+                                state={{ post }}
+                                className="block mb-2"
+                              >
+                                <h3 className="font-semibold text-sm text-on-surface line-clamp-2 group-hover:text-primary transition-colors">
+                                  {post.title}
+                                </h3>
+                              </Link>
+
+                              <div className="flex items-center justify-between text-xs text-on-surface-variant mb-2">
+                                <span className="truncate">{post.author?.name || 'Anonymous'}</span>
+                                <div className="flex items-center gap-0.5">
+                                  <Eye size={12} />
+                                  {post.stats?.views || 0}
+                                </div>
+                              </div>
+
+                              {/* Badge */}
+                              <div className="flex items-center gap-1 text-xs text-primary">
+                                <Star size={11} fill="currentColor" />
+                                <span>Saved</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {/* View All Button */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="mt-6 text-center"
+                      >
+                        <Link
+                          to="/saved-posts"
+                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all font-semibold text-sm"
+                        >
+                          View All Saved Posts ({savedPostsData.length}+)
+                          <ExternalLink size={14} />
+                        </Link>
+                      </motion.div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
         </Tabs>
 
+        {/* SOCIAL LINKS SUGGESTION */}
         {!hasSocialLinks && (
           <motion.div
             initial={{ opacity: 0, y: 14 }}
@@ -903,6 +1118,7 @@ export default function MyProfile() {
           </motion.div>
         )}
 
+        {/* DANGER ZONE */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -933,6 +1149,7 @@ export default function MyProfile() {
         </motion.div>
       </div>
 
+      {/* EDIT PROFILE MODAL */}
       <AnimatePresence>
         {editOpen && (
           <motion.div
@@ -1117,6 +1334,7 @@ export default function MyProfile() {
         )}
       </AnimatePresence>
 
+      {/* CHANGE PASSWORD MODAL */}
       <AnimatePresence>
         {changePasswordOpen && (
           <motion.div
@@ -1192,6 +1410,7 @@ export default function MyProfile() {
         )}
       </AnimatePresence>
 
+      {/* DELETE ACCOUNT MODAL */}
       <AnimatePresence>
         {deleteAccountOpen && (
           <motion.div

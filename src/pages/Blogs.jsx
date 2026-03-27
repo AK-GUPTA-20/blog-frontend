@@ -2,16 +2,20 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Skeleton } from '../components/ui/skeleton';
-import { getAllPosts } from '../services/postApi';
-import { AlertCircle, RefreshCw, BookOpen, Eye, Flame, TrendingUp } from 'lucide-react';
+import { getAllPosts, getPostsByCategory } from '../services/postApi';
+import { AlertCircle, RefreshCw, BookOpen, Eye, Flame, TrendingUp, Filter, X } from 'lucide-react';
+import { toast } from '../components/Toast';
+
+// ============================================================================
+// PLACEHOLDER IMAGE - NO EXTERNAL REQUESTS
+// ============================================================================
+
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3EArticle Image%3C/text%3E%3C/svg%3E';
 
 // ============================================================================
 // SKELETON COMPONENTS
 // ============================================================================
 
-/**
- * Blog Card Skeleton Component with Pulse Animation
- */
 function BlogCardSkeleton({ delay = 0 }) {
   return (
     <motion.article
@@ -55,9 +59,6 @@ function BlogCardSkeleton({ delay = 0 }) {
 // STATE COMPONENTS
 // ============================================================================
 
-/**
- * Error State Component
- */
 function ErrorState({ error, onRetry }) {
   return (
     <motion.div
@@ -77,11 +78,7 @@ function ErrorState({ error, onRetry }) {
         </h2>
 
         <p className="text-on-surface-variant mb-2 text-sm md:text-base">
-          {error?.message || 'Something went wrong while fetching blogs. Please check your internet connection.'}
-        </p>
-
-        <p className="text-xs text-on-surface-variant/70 mb-8">
-          Error Code: {error?.status || 'UNKNOWN'}
+          {error?.message || 'Something went wrong while fetching blogs.'}
         </p>
 
         <motion.button
@@ -98,9 +95,6 @@ function ErrorState({ error, onRetry }) {
   );
 }
 
-/**
- * Empty State Component
- */
 function EmptyState() {
   return (
     <motion.div
@@ -121,9 +115,6 @@ function EmptyState() {
   );
 }
 
-/**
- * Blog Loading Indicator
- */
 function LoadingIndicator() {
   return (
     <div className="flex items-center justify-center gap-2 text-on-surface-variant">
@@ -139,9 +130,6 @@ function LoadingIndicator() {
 // HEADER SECTION COMPONENT
 // ============================================================================
 
-/**
- * Header Section with Hero and Stats
- */
 function HeaderSection({ blogCount }) {
   return (
     <motion.div
@@ -204,6 +192,25 @@ export default function Blogs() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalBlogs, setTotalBlogs] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const limit = 10;
+  const categories = [
+    { value: 'all', label: 'All Categories' },
+    { value: 'Technology', label: 'Technology' },
+    { value: 'Lifestyle', label: 'Lifestyle' },
+    { value: 'Travel', label: 'Travel' },
+    { value: 'Food', label: 'Food' },
+    { value: 'Business', label: 'Business' },
+    { value: 'Health', label: 'Health' },
+    { value: 'Education', label: 'Education' },
+    { value: 'Entertainment', label: 'Entertainment' },
+    { value: 'Sports', label: 'Sports' },
+  ];
 
   const cardColors = [
     'hover:border-violet-500/40 hover:bg-violet-500/5 dark:hover:bg-violet-500/10 hover:shadow-[0_0_40px_-10px_rgba(139,92,246,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(139,92,246,0.3)]',
@@ -217,53 +224,68 @@ export default function Blogs() {
   /**
    * Load blogs from API
    */
-  const loadBlogsFromAPI = useCallback(async () => {
+  const loadBlogs = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await getAllPosts(1, 100);
-      let data = response;
+      let response;
       
-      if (response?.data && Array.isArray(response.data)) {
-        data = response.data;
-      } else if (response?.posts && Array.isArray(response.posts)) {
-        data = response.posts;
-      } else if (response?.items && Array.isArray(response.items)) {
-        data = response.items;
-      } else if (!Array.isArray(response)) {
-        data = response.data || response.posts || response.items || [];
+      if (selectedCategory === 'all') {
+        response = await getAllPosts(currentPage, limit);
+      } else {
+        response = await getPostsByCategory(selectedCategory, currentPage, limit);
       }
 
-      // Validate data
-      if (!Array.isArray(data) || data.length === 0) {
-        setBlogs([]);
-        return;
+      let data = response?.data || [];
+      
+      if (!Array.isArray(data)) {
+        data = [];
       }
 
       setBlogs(data);
+      setTotalBlogs(response?.total || 0);
+      setTotalPages(response?.pages || 1);
     } catch (err) {
       setError(err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, selectedCategory, limit]);
 
   /**
    * Handle retry action
    */
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
-    loadBlogsFromAPI();
-  }, [loadBlogsFromAPI]);
+    loadBlogs();
+  }, [loadBlogs]);
 
   /**
-   * Load blogs on component mount
+   * Handle category filter
+   */
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
+    setShowFilterModal(false);
+  };
+
+  /**
+   * Handle clear filter (go back)
+   */
+  const handleClearFilter = () => {
+    setSelectedCategory('all');
+    setCurrentPage(1);
+    setShowFilterModal(false);
+  };
+
+  /**
+   * Load blogs on mount and when filters change
    */
   useEffect(() => {
     window.scrollTo(0, 0);
-    loadBlogsFromAPI();
-  }, [loadBlogsFromAPI]);
+    loadBlogs();
+  }, [loadBlogs]);
 
   /**
    * Render loading skeleton state
@@ -309,7 +331,7 @@ export default function Blogs() {
   /**
    * Render empty state
    */
-  if (!blogs || blogs.length === 0) {
+  if (blogs.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
         <HeaderSection blogCount={0} />
@@ -322,131 +344,243 @@ export default function Blogs() {
    * Render blog cards
    */
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
-      {/* Header Section */}
-      <HeaderSection blogCount={blogs.length} />
+    <article className="pb-24">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
+        {/* Header Section */}
+        <HeaderSection blogCount={totalBlogs} />
 
-      {/* Blog Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        {blogs.map((post, i) => {
-          const postId = post.id || post._id;
-          const postSlug = post.slug;
-          const postImage = post.featuredImage || post.image || post.thumbnail || `https://images.unsplash.com/photo-1516534775068-bb6c2ff74b3f?q=80&w=2670&auto=format&fit=crop`;
-          const postTitle = post.title || 'Untitled';
-          const postCategory = post.category || 'Uncategorized';
-          const readTime = post.stats?.readingTime || post.readTime || '1 min read';
-          const views = post.stats?.views || post.views || 0;
-          const publishedDate = post.publishedAt || post.createdAt;
-
-          // Author Info
-          const authorId = post.author?.id || post.author?._id || postId;
-          const authorName = post.author?.name || 'Anonymous';
-          const authorAvatar = post.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`;
-
-          // Format date
-          let formattedDate = '';
-          if (publishedDate) {
-            try {
-              const date = new Date(publishedDate);
-              formattedDate = date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              });
-            } catch (e) {
-              formattedDate = publishedDate;
-            }
-          }
-
-          return (
-            <motion.article
-              key={`${postSlug}-${postId}-${i}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
-              className={`flex flex-col group cursor-pointer bg-surface-container-low rounded-3xl p-4 hover:bg-surface-container-high transition-all duration-500 border border-transparent hover:-translate-y-2 overflow-hidden ${
-                cardColors[i % cardColors.length]
-              }`}
+        {/*   Filter Section */}
+        <div className="mb-12 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowFilterModal(!showFilterModal)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass-card border border-primary/30 hover:bg-surface-bright transition-all"
             >
-              {/* Image Section */}
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden relative mb-6 shadow-md w-full bg-surface-container-high">
-                <Link
-                  to={`/post/${postSlug}`}
-                  className="absolute inset-0 z-20"
-                  title={`Read: ${postTitle}`}
-                  aria-label={`Read ${postTitle}`}
-                  state={{ post }}
-                />
-                <img
-                  src={postImage}
-                  alt={postTitle}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.src = `https://images.unsplash.com/photo-1516534775068-bb6c2ff74b3f?q=80&w=2670&auto=format&fit=crop`;
-                  }}
-                />
+              <Filter size={20} />
+              <span className="font-semibold">
+                {selectedCategory === 'all' ? 'All Categories' : selectedCategory}
+              </span>
+            </motion.button>
 
-                {/* Category Tag on Image */}
-                <div className="absolute top-3 left-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 z-10">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span className="text-xs font-label uppercase tracking-widest text-white font-bold">
-                    {postCategory}
-                  </span>
+            {/*   Back/Clear Button - Only show if not on "all" */}
+            {selectedCategory !== 'all' && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleClearFilter}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-full glass-card border border-outline-variant/30 hover:bg-surface-bright transition-all"
+                title="Clear filter and go back"
+              >
+                <X size={20} />
+                <span className="font-semibold text-sm">Clear</span>
+              </motion.button>
+            )}
+          </div>
+
+          {/* Pagination Info */}
+          <div className="text-sm text-on-surface-variant font-label">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
+
+        {/*   Filter Dropdown Modal */}
+        {showFilterModal && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-8 p-6 bg-surface-container-low rounded-3xl border border-outline-variant/30 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3"
+          >
+            {categories.map((cat) => (
+              <motion.button
+                key={cat.value}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleCategoryChange(cat.value)}
+                className={`px-4 py-2 rounded-full font-semibold transition-all text-sm ${
+                  selectedCategory === cat.value
+                    ? 'bg-primary text-on-primary shadow-lg'
+                    : 'bg-surface-bright text-on-surface hover:bg-surface-bright/80'
+                }`}
+              >
+                {cat.label}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Blog Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
+          {blogs.map((post, i) => {
+            const postId = post.id || post._id;
+            const postSlug = post.slug;
+            const postImage = post.featuredImage || post.image || post.thumbnail || PLACEHOLDER_IMAGE;
+            const postTitle = post.title || 'Untitled';
+            const postCategory = post.category || 'Uncategorized';
+            const readTime = post.stats?.readingTime || post.readTime || '1 min read';
+            const views = post.stats?.views || post.views || 0;
+            const publishedDate = post.publishedAt || post.createdAt;
+
+            // Author Info
+            const authorId = post.author?.id || post.author?._id || postId;
+            const authorName = post.author?.name || 'Anonymous';
+            const authorAvatar = post.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`;
+
+            // Format date
+            let formattedDate = '';
+            if (publishedDate) {
+              try {
+                const date = new Date(publishedDate);
+                formattedDate = date.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                });
+              } catch (e) {
+                formattedDate = publishedDate;
+              }
+            }
+
+            return (
+              <motion.article
+                key={`${postSlug}-${postId}-${i}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.05 }}
+                className={`flex flex-col group cursor-pointer bg-surface-container-low rounded-3xl p-4 hover:bg-surface-container-high transition-all duration-500 border border-transparent ${
+                  cardColors[i % cardColors.length]
+                }`}
+              >
+                {/* Image Section */}
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden relative mb-6 shadow-md w-full bg-surface-container-high">
+                  <Link
+                    to={`/post/${postSlug}`}
+                    className="absolute inset-0 z-20"
+                    title={`Read: ${postTitle}`}
+                    aria-label={`Read ${postTitle}`}
+                    state={{ post }}
+                  />
+                  <img
+                    src={postImage}
+                    alt={postTitle}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMAGE;
+                    }}
+                  />
+
+                  {/* Category Tag on Image */}
+                  <div className="absolute top-3 left-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 z-10">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span className="text-xs font-label uppercase tracking-widest text-white font-bold">
+                      {postCategory}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Content Section */}
-              <div className="px-2 pb-2 flex-1 flex flex-col">
-                {/* Title */}
-                <Link to={`/post/${postSlug}`} className="flex-1" state={{ post }}>
-                  <h3 className="text-2xl font-headline font-bold leading-tight mb-3 group-hover:text-primary transition-colors line-clamp-2">
-                    {postTitle}
-                  </h3>
-                </Link>
+                {/* Content Section */}
+                <div className="px-2 pb-2 flex-1 flex flex-col">
+                  {/* Title */}
+                  <Link to={`/post/${postSlug}`} className="flex-1" state={{ post }}>
+                    <h3 className="text-2xl font-headline font-bold leading-tight mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                      {postTitle}
+                    </h3>
+                  </Link>
 
-                {/* Footer: Date and Read Time */}
-                <div className="flex items-center justify-between text-sm font-label text-on-surface-variant mt-auto pt-4 border-t border-outline-variant/30">
-                  <span className="text-xs">{formattedDate}</span>
-                  <span className="font-medium bg-surface-bright px-3 py-1 rounded-full text-xs">
-                    {readTime} min read
-                  </span>
-                </div>
-
-                {/* Author Info with Views - Below Translucent Line */}
-                <div className="flex items-center justify-between text-xs font-label text-on-surface-variant mt-4 pt-4 border-t border-outline-variant/20">
-                  {/* Author Profile */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    <img
-                      src={authorAvatar}
-                      alt={authorName}
-                      className="w-7 h-7 rounded-full object-cover border border-outline-variant/30 flex-shrink-0"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src = `https://i.pravatar.cc/150?u=${authorId}`;
-                      }}
-                    />
-                    <span className="truncate font-medium text-on-surface-variant">{authorName}</span>
+                  {/* Footer: Date and Read Time */}
+                  <div className="flex items-center justify-between text-sm font-label text-on-surface-variant mt-auto pt-4 border-t border-outline-variant/30">
+                    <span className="text-xs">{formattedDate}</span>
+                    <span className="font-medium bg-surface-bright px-3 py-1 rounded-full text-xs">
+                      {readTime} min read
+                    </span>
                   </div>
 
-                  {/* Views */}
-                  <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                    <Eye size={14} className="text-primary" />
-                    <span className="font-semibold text-on-surface-variant">{views}</span>
+                  {/* Author Info with Views */}
+                  <div className="flex items-center justify-between text-xs font-label text-on-surface-variant mt-4 pt-4 border-t border-outline-variant/20">
+                    {/* Author Profile */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img
+                        src={authorAvatar}
+                        alt={authorName}
+                        className="w-7 h-7 rounded-full object-cover border border-outline-variant/30 flex-shrink-0"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = `https://i.pravatar.cc/150?u=${authorId}`;
+                        }}
+                      />
+                      <span className="truncate font-medium text-on-surface-variant">{authorName}</span>
+                    </div>
+
+                    {/* Views */}
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                      <Eye size={14} className="text-primary" />
+                      <span className="font-semibold text-on-surface-variant">{views}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.article>
-          );
-        })}
-      </div>
+              </motion.article>
+            );
+          })}
+        </div>
 
-      {/* Footer Info */}
-      <div className="mt-24 text-center text-on-surface-variant text-sm">
-        <p>
-          Showing <span className="font-semibold text-on-surface">{blogs.length}</span> articles
-        </p>
+        {/*   Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setCurrentPage((prev) => Math.max(1, prev - 1));
+              }}
+              disabled={currentPage === 1}
+              className="px-6 py-3 rounded-full glass-card disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all"
+            >
+              ← Previous
+            </motion.button>
+
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <motion.button
+                  key={i + 1}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-full font-semibold transition-all ${
+                    currentPage === i + 1
+                      ? 'bg-primary text-on-primary shadow-lg'
+                      : 'bg-surface-bright text-on-surface hover:bg-surface-bright/80'
+                  }`}
+                >
+                  {i + 1}
+                </motion.button>
+              ))}
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+              }}
+              disabled={currentPage === totalPages}
+              className="px-6 py-3 rounded-full glass-card disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all"
+            >
+              Next →
+            </motion.button>
+          </div>
+        )}
+
+        {/* Footer Info */}
+        <div className="mt-12 text-center text-on-surface-variant text-sm">
+          <p>
+            Showing <span className="font-semibold text-on-surface">{blogs.length}</span> of{' '}
+            <span className="font-semibold text-on-surface">{totalBlogs}</span> articles
+          </p>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
