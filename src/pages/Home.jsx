@@ -1,12 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, Quote } from 'lucide-react';
 import { latestPosts, topBlogs } from '../data/mockData';
+import { getTopAuthors, getAllAuthors } from '../services/postApi';
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [topAuthors, setTopAuthors] = useState([]);
+  const [isLoadingAuthors, setIsLoadingAuthors] = useState(true);
+  const [totalAuthors, setTotalAuthors] = useState(0);
+
+  useEffect(() => {
+    loadAuthors();
+  }, []);
+
+  const loadAuthors = async () => {
+    setIsLoadingAuthors(true);
+    try {
+      // Fetch top 4 authors (2 for hero, 4 for featured minds)
+      const topResponse = await getTopAuthors(4);
+      setTopAuthors(topResponse?.data || []);
+
+      // Fetch total authors count
+      const allResponse = await getAllAuthors(1, 1);
+      setTotalAuthors(allResponse?.total || 0);
+    } catch (err) {
+      console.error('Error loading authors:', err);
+      setTopAuthors([]);
+      setTotalAuthors(0);
+    } finally {
+      setIsLoadingAuthors(false);
+    }
+  };
+
+  const getFallbackAvatar = (name) => {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`;
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -55,29 +86,55 @@ export default function Home() {
                   </span>
                   <span className="font-bold">Explore Archive</span>
                 </Link>
-                <div className="flex -space-x-3">
-                  <img loading="lazy" decoding="async" className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="Reader avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOFWVSOUPok4ev4YADG2iiqxUWWKAa4aKtajmsZKw4YE_SWOUR3nxsnVoaqrHk9bt5ytB5tNwUwFR_ZIbdAUC1iIKnfgecwpNU5oXoQVZ_CxoPamB8CNq-s255oYWdIjf0YsCO0ES1HB0XOvKzQYr7vFwtQXy1vubh7-47cr3eBUDWa0NnwPVGm99KnQrqFV0yZoB9aEY0igUxCE3d0M5moH3gHdjPOOmBOXqMCiZxMDVs2wKBtAuLWI8X9eqKvBMaBLrucoxHrwGA" />
-                  <img loading="lazy" decoding="async" className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="Reader avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdbzLEZDWbnrIAkyNsCid_sgeaEDQaByAkyOJxKptk4Hm6cMJvbdskeIaCUqiW0iD4szvdtN7-jdsw4CZIboS1XIKu0UxEys5IdC9HMpMUtCfCp0A3_SFtPHAgcQ7xjT8DQC8XTukINl_PfDC2NWjE_rUCvq9fIcIbJnbntpeylOriXRnphb1hQdWv4y70Z0MM2JR9kqqAwbVWYdrMdOgfEvgKRDjyIFpeM5T2vxaBzo6AUdXEwWI1cyHMNRev-GwCmg_Xtz_zHXpw" />
-                  <img loading="lazy" decoding="async" className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="Reader avatar 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8tTqYQ9q9yR3050JjmZgTWN0A6Dqs4ko0AsnwUXhazqORo-aW3iL1a2GCGFgXu56Ayvgwl8N8iNkG9D_BBMXZFDM6VAHulftgXSQgQOfur9sDlCVkltgQwWLSQQBWGfT3p13sRiQf0sJqCx--dhdQQk-MzhL-oPwVomL601NKhrUL5Tj2IypjPSKNVDiRSTjBRZp6bNowC8Cfbyu04rCzWP-852Fsy_04ocbF5D6Z4BMyb76LMJc_Gi9MDgHGnBf6AQ_y38kKWQ2O" />
-                  <div className="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-surface flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+2k</div>
-                </div>
+                <Link to="/authors" className="flex -space-x-3">
+                  {isLoadingAuthors ? (
+                    <>
+                      <div className="w-10 h-10 rounded-full border-2 border-surface bg-surface-container-high animate-pulse"></div>
+                      <div className="w-10 h-10 rounded-full border-2 border-surface bg-surface-container-high animate-pulse"></div>
+                      <div className="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-surface flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+0</div>
+                    </>
+                  ) : topAuthors.length > 0 ? (
+                    <>
+                      {topAuthors.slice(0, 2).map((author) => (
+                        <img
+                          key={author._id}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-10 h-10 rounded-full border-2 border-surface object-cover hover:scale-110 transition-transform"
+                          alt={author.name}
+                          src={author.avatar || getFallbackAvatar(author.name)}
+                          title={author.name}
+                        />
+                      ))}
+                      <div className="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-surface flex items-center justify-center text-[10px] font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer">
+                        +{Math.max(0, totalAuthors - 2)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-surface flex items-center justify-center text-[10px] font-bold text-on-surface-variant">
+                      +{totalAuthors}
+                    </div>
+                  )}
+                </Link>
               </div>
             </div>
             <div className="lg:w-1/2 relative">
-              <Link to="/post/architecting-for-scale" className="block relative rounded-xl overflow-hidden shadow-2xl group cursor-pointer aspect-[4/3]">
-                <img loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="The Brutalist Revival: Concrete as a Canvas for Light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-I1bHS9oylCTEdTmTI9gJ1WrGLMMLU3gDiHejyaaRx4CjES9ikWqnW2FJ7WdCyxhVcmxoZT9E47eTcxzXoxSkjJ2SDR2P3VMJ66MVJBjlwZiPUMUq8_bdKbJsMOhHr5EIPeIlodRGt5GRKIjrhAiAU_UKC63FU0rdAyEbJUBmT-MejQmkPzvGP5LLQeRMFz82kjgNZzeB0R9zppa7GoIkXNKMQTvi8CZPHTgkK4774ptTNm700C0m9_uEol1MQ9ObOemEKh8KC_uH" />
-                <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent opacity-80"></div>
-                <div className="absolute bottom-0 p-6 md:p-10 w-full">
-                  <div className="glass-card p-6 md:p-8 rounded-lg border border-white/5 hover:translate-y-[-8px] transition-transform duration-500 shadow-2xl">
-                    <span className="text-primary text-xs font-bold tracking-widest uppercase mb-4 block">Architecture</span>
-                    <h2 className="font-headline text-2xl md:text-3xl font-bold mb-4 leading-tight">The Brutalist Revival: Concrete as a Canvas for Light</h2>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-on-surface-variant">8 min read • 12 Oct 2024</span>
-                      <ArrowRight size={20} className="text-primary transform -rotate-45" />
+              {latestPosts[0] && (
+                <Link to={`/post/${latestPosts[0].slug}`} className="block relative rounded-xl overflow-hidden shadow-2xl group cursor-pointer aspect-[4/3]">
+                  <img loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={latestPosts[0].title} src={latestPosts[0].image} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent opacity-80"></div>
+                  <div className="absolute bottom-0 p-6 md:p-10 w-full">
+                    <div className="glass-card p-6 md:p-8 rounded-lg border border-white/5 hover:translate-y-[-8px] transition-transform duration-500 shadow-2xl">
+                      <span className="text-primary text-xs font-bold tracking-widest uppercase mb-4 block">{latestPosts[0].category}</span>
+                      <h2 className="font-headline text-2xl md:text-3xl font-bold mb-4 leading-tight">{latestPosts[0].title}</h2>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-on-surface-variant">{latestPosts[0].readTime} • {latestPosts[0].date}</span>
+                        <ArrowRight size={20} className="text-primary transform -rotate-45" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              )}
               <div className="absolute -top-6 -right-6 w-32 h-32 bg-primary/20 blur-[60px] rounded-full"></div>
             </div>
           </div>
@@ -121,7 +178,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-            {/* Large Card */}
+            {/* Large Card - First Latest Post */}
             {latestPosts[0] && (
               <Link to={`/post/${latestPosts[0].slug}`} className="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-low h-[400px] md:h-[500px]">
                 <img loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105" alt={latestPosts[0].title} src={latestPosts[0].image} />
@@ -140,7 +197,7 @@ export default function Home() {
               </Link>
             )}
             
-            {/* Small Vertical Card */}
+            {/* Small Vertical Card - Second Latest Post */}
             {latestPosts[1] && (
               <Link to={`/post/${latestPosts[1].slug}`} className="md:col-span-4 bg-surface-container-high rounded-xl p-8 flex flex-col justify-between hover:bg-surface-bright transition-all duration-300 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -157,35 +214,51 @@ export default function Home() {
                 </div>
               </Link>
             )}
-
-            
           </div>
         </section>
 
-        {/* Featured Minds Section */}
+        {/* Featured Minds Section - DYNAMIC with 4 Authors */}
         <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24">
           <div className="flex justify-between items-end mb-12">
             <div>
               <h2 className="font-headline text-4xl font-bold tracking-tight mb-2">Featured Minds</h2>
               <p className="text-on-surface-variant">Voices shaping our culture and design.</p>
             </div>
-            <Link to="/categories" className="text-primary font-bold flex items-center gap-2 group whitespace-nowrap">
+            <Link to="/authors" className="text-primary font-bold flex items-center gap-2 group whitespace-nowrap">
               All authors
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {topBlogs.map((blog) => (
-              <div key={`mind-${blog.id}`} className="flex flex-col items-center gap-4 group cursor-pointer">
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-[6px] border-surface-container-high group-hover:border-primary transition-colors shadow-xl">
-                  <img loading="lazy" decoding="async" src={blog.author.avatar} alt={blog.author.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110" />
+            {isLoadingAuthors ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-4 animate-pulse">
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-surface-container-high"></div>
+                  <div className="w-24 h-4 bg-surface-container-high rounded"></div>
+                  <div className="w-20 h-3 bg-surface-container-high rounded"></div>
+                  <div className="w-32 h-6 bg-surface-container-high rounded"></div>
                 </div>
-                <div className="text-center">
-                  <h4 className="font-headline font-bold text-xl mb-1">{blog.author.name}</h4>
-                  <p className="text-xs text-primary font-bold tracking-widest uppercase">{blog.author.role}</p>
-                </div>
+              ))
+            ) : topAuthors.length > 0 ? (
+              topAuthors.slice(0, 4).map((author) => (
+                <Link key={author._id} to={`/author-profile/${author._id}`} className="flex flex-col items-center gap-4 group cursor-pointer">
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-[6px] border-surface-container-high group-hover:border-primary transition-colors shadow-xl">
+                    <img loading="lazy" decoding="async" src={author.avatar || getFallbackAvatar(author.name)} alt={author.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110" />
+                  </div>
+                  <div className="text-center">
+                    <h4 className="font-headline font-bold text-xl mb-1 line-clamp-1">{author.name}</h4>
+                    <p className="text-xs text-primary font-bold tracking-widest uppercase mb-2">{author.role === 'admin' ? 'Verified Author' : 'Author'}</p>
+                    <p className="text-xs text-on-surface-variant line-clamp-2 px-2 min-h-[2rem] flex items-center justify-center">
+                      {author.bio && author.bio.trim() ? author.bio : 'Not added yet'}
+                    </p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-4 text-center py-8">
+                <p className="text-on-surface-variant">No featured authors available</p>
               </div>
-            ))}
+            )}
           </div>
         </section>
 
@@ -208,7 +281,6 @@ export default function Home() {
                 return (
                   <div key={blog.id} className={`bg-surface p-8 rounded-xl text-center group hover:translate-y-[-10px] transition-all duration-300 border border-transparent relative overflow-hidden before:absolute before:inset-0 ${colors[idx % colors.length]}`}>
                     <div className="relative w-24 h-24 mx-auto mb-6">
-                      {/* Using blog image instead of author for this requirement */}
                       <img loading="lazy" decoding="async" className="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={blog.title} src={blog.image} />
                       <div className="absolute inset-0 rounded-full ring-2 ring-primary ring-offset-4 ring-offset-surface opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
