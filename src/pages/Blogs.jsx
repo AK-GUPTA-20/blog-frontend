@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Skeleton } from '../components/ui/skeleton';
-import { getAllPosts, getPostsByCategory } from '../services/postApi';
+import { getAllPosts, getPostsByCategory, searchPosts } from '../services/postApi';
 import { AlertCircle, RefreshCw, BookOpen, Eye, Flame, TrendingUp, Filter, X } from 'lucide-react';
 import { toast } from '../components/Toast';
 
@@ -197,21 +197,22 @@ export default function Blogs() {
   const [totalBlogs, setTotalBlogs] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showFilterModal, setShowFilterModal] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
 
-  const limit = 10;
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'Technology', label: 'Technology' },
-    { value: 'Lifestyle', label: 'Lifestyle' },
-    { value: 'Travel', label: 'Travel' },
-    { value: 'Food', label: 'Food' },
-    { value: 'Business', label: 'Business' },
-    { value: 'Health', label: 'Health' },
-    { value: 'Education', label: 'Education' },
-    { value: 'Entertainment', label: 'Entertainment' },
-    { value: 'Sports', label: 'Sports' },
-  ];
-
+    const limit = 10;
+    const categories = [
+      { value: 'all', label: 'All Categories' },
+      { value: 'Technology', label: 'Technology' },
+      { value: 'Lifestyle', label: 'Lifestyle' },
+      { value: 'Travel', label: 'Travel' },
+      { value: 'Food', label: 'Food' },
+      { value: 'Business', label: 'Business' },
+      { value: 'Health', label: 'Health' },
+      { value: 'Education', label: 'Education' },
+      { value: 'Entertainment', label: 'Entertainment' },
+      { value: 'Sports', label: 'Sports' },
+      { value: 'Other', label: 'Other' },
+    ];
   const cardColors = [
     'hover:border-violet-500/40 hover:bg-violet-500/5 dark:hover:bg-violet-500/10 hover:shadow-[0_0_40px_-10px_rgba(139,92,246,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(139,92,246,0.3)]',
     'hover:border-amber-500/40 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 hover:shadow-[0_0_40px_-10px_rgba(245,158,11,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(245,158,11,0.3)]',
@@ -228,34 +229,38 @@ export default function Blogs() {
     setIsLoading(true);
     setError(null);
 
-    try {
-      let response;
-      
-      if (selectedCategory === 'all') {
-        response = await getAllPosts(currentPage, limit);
-      } else {
-        response = await getPostsByCategory(selectedCategory, currentPage, limit);
+      const query = searchParams.get('q');
+      const categoryParam = searchParams.get('category');
+      const activeCategory = categoryParam || selectedCategory;
+
+      try {
+        let response;
+
+        if (query) {
+          response = await searchPosts(query);
+        } else if (activeCategory === 'all') {
+          response = await getAllPosts(currentPage, limit);
+        } else {
+          response = await getPostsByCategory(activeCategory, currentPage, limit);
+        }
+
+        let data = response?.data || response || [];
+
+        if (Array.isArray(response)) {
+          data = response;
+        } else if (!Array.isArray(data)) {
+          data = [];
+        }
+
+        setBlogs(data);
+        setTotalBlogs(response?.total || data.length);
+        setTotalPages(response?.pages || 1);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setIsLoading(false);
       }
-
-      let data = response?.data || [];
-      
-      if (!Array.isArray(data)) {
-        data = [];
-      }
-
-      setBlogs(data);
-      setTotalBlogs(response?.total || 0);
-      setTotalPages(response?.pages || 1);
-    } catch (err) {
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentPage, selectedCategory, limit]);
-
-  /**
-   * Handle retry action
-   */
+    }, [currentPage, selectedCategory, limit, searchParams]);
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
     loadBlogs();
@@ -266,20 +271,29 @@ export default function Blogs() {
    */
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
-    setCurrentPage(1);
-    setShowFilterModal(false);
+      setSearchParams({ category });
+      setCurrentPage(1);
+      setShowFilterModal(false);
+    };
+
+    /**
+     * Handle clear filter (go back)
+     */
+    const handleClearFilter = () => {
+      setSelectedCategory('all');
+      setSearchParams({});
   };
 
-  /**
-   * Handle clear filter (go back)
-   */
-  const handleClearFilter = () => {
-    setSelectedCategory('all');
-    setCurrentPage(1);
-    setShowFilterModal(false);
-  };
+useEffect(() => {
+      const qCat = searchParams.get('category');
+      if (qCat && qCat !== selectedCategory) {
+        setSelectedCategory(qCat);
+      } else if (!qCat && selectedCategory !== 'all') {
+        setSelectedCategory('all');
+      }
+    }, [searchParams, selectedCategory]);
 
-  /**
+    /**
    * Load blogs on mount and when filters change
    */
   useEffect(() => {

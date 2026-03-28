@@ -26,7 +26,7 @@ export default function WriteBlog() {
   const [tagInput, setTagInput] = useState('');
   const [imagePreview, setImagePreview] = useState('');
 
-  const categories = ['Technology', 'Culture', 'Minimalism', 'Design', 'Business', 'Lifestyle', 'Other'];
+  const categories = ["Technology", "Lifestyle", "Travel", "Food", "Business", "Health", "Education", "Entertainment", "Sports", "Other"];
 
   useEffect(() => {
     if (!token) navigate('/login');

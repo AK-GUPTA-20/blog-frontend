@@ -28,14 +28,13 @@ const Navbar = memo(function Navbar() {
     if (location.pathname === '/') {
       window.dispatchEvent(new CustomEvent('focusSearch'));
     } else {
-      navigate('/categories');
+      navigate('/blogs');
     }
   };
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Blogs', path: '/blogs' },
-    { name: 'Categories', path: '/categories' },
     { name: 'Authors', path: '/authors' },
     { name: 'About', path: '/about' },
   ];

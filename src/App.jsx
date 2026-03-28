@@ -10,7 +10,6 @@ import { Loader2 } from 'lucide-react';
 
 const Home = React.lazy(() => import("./pages/Home"));
 const Post = React.lazy(() => import("./pages/Post"));
-const Categories = React.lazy(() => import("./pages/Categories"));
 const About = React.lazy(() => import("./pages/About"));
 const Blogs = React.lazy(() => import("./pages/Blogs"));
 const Authors = React.lazy(() => import("./pages/Authors"));
@@ -44,7 +43,6 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/post/:slug" element={<Post />} />
-                    <Route path="/categories" element={<Categories />} />
                     <Route path="/blogs" element={<Blogs />} />
                     <Route path="/authors" element={<Authors />} />
                     <Route path="/about" element={<About />} />

@@ -30,10 +30,10 @@ const Footer = memo(function Footer() {
           <div>
             <h4 className="font-display font-semibold text-lg mb-6 tracking-tight">Features</h4>
             <ul className="space-y-4 font-body text-muted-foreground">
-              <li><Link to="/categories" className="hover:text-primary transition-colors">Design Systems</Link></li>
-              <li><Link to="/categories" className="hover:text-primary transition-colors">Frontend Architecture</Link></li>
-              <li><Link to="/categories" className="hover:text-primary transition-colors">UI/UX Innovations</Link></li>
-              <li><Link to="/categories" className="hover:text-primary transition-colors">Creative Coding</Link></li>
+              <li><Link to="/blogs?category=Lifestyle" className="hover:text-primary transition-colors">Lifestyle Trends</Link></li>
+              <li><Link to="/blogs?category=Technology" className="hover:text-primary transition-colors">Frontend Architecture</Link></li>
+              <li><Link to="/blogs?category=Entertainment" className="hover:text-primary transition-colors">Entertainment News</Link></li>
+              <li><Link to="/blogs?category=Travel" className="hover:text-primary transition-colors">Travel Guides</Link></li>
             </ul>
           </div>
           

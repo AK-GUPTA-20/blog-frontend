@@ -44,7 +44,7 @@ function PostSkeleton() {
   );
 }
 
-const PostActions = ({ likes, isLiked, isLiking, handleLike, handleSave, handleShare }) => (
+const PostActions = ({ likes, isLiked, isSaved, isLiking, isSaving, handleLike, handleSave, handleShare }) => (
   <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max lg:static lg:translate-x-0 lg:w-full">
     <div className="flex lg:flex-col items-center gap-4 lg:gap-6 glass-card px-6 py-3 lg:py-6 rounded-full lg:w-16 lg:mx-auto lg:sticky lg:top-32 shadow-xl border border-outline-variant/30 bg-background/80 backdrop-blur-xl">
       <button
@@ -61,13 +61,15 @@ const PostActions = ({ likes, isLiked, isLiking, handleLike, handleSave, handleS
         {likes > 0 && <span className="text-sm lg:text-xs font-semibold lg:font-normal">{likes}</span>}
       </button>
       <div className="w-px h-6 lg:w-8 lg:h-px bg-outline-variant lg:my-2" />
-      <button 
+      <button
         onClick={handleSave}
-        className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg cursor-not-allowed opacity-50" 
-        title="This feature is not allowed yet"
-        disabled
+        disabled={isSaving}
+        className={`text-on-surface-variant hover:text-primary transition-colors p-2 rounded-lg cursor-pointer ${
+          isSaved ? 'text-primary' : ''
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title={isSaved ? "Unsave post" : "Save post"}
       >
-        <Bookmark size={20} />
+        <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
       </button>
       <div className="w-px h-4 lg:hidden bg-outline-variant/50" />
       <button 
@@ -92,6 +94,8 @@ export default function Post() {
   const [likes, setLikes] = useState(0);
   const [views, setViews] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [postId, setPostId] = useState(null);
   
   //   Use ref to prevent double fetch in Strict Mode
@@ -124,6 +128,7 @@ export default function Post() {
         setViews(postData?.stats?.views || 0);
         setLikes(postData?.stats?.likes || 0);
         setIsLiked(postData?.isLiked || postData?.userLiked || false);
+        setIsSaved(postData?.isSaved || postData?.userSaved || false);
         
       } catch (err) {
         setError(err);
@@ -181,13 +186,18 @@ export default function Post() {
     }
   };
 
-  // Load liked posts from localStorage on mount (safe)
+  // Load liked and saved posts from localStorage on mount (safe fallback)
   useEffect(() => {
     if (postId && token && typeof window !== 'undefined') {
       try {
         const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '{}');
         if (likedPosts[postId]) {
           setIsLiked(true);
+        }
+        
+        const savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '{}');
+        if (savedPosts[postId]) {
+          setIsSaved(true);
         }
       } catch (e) {
         console.warn('LocalStorage error', e);
@@ -203,7 +213,38 @@ export default function Post() {
       return;
     }
 
-    toast('This feature is not allowed yet', 'info');
+    if (!postId) {
+      toast('Post data not loaded', 'error');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await savePost(token, postId);
+      const newIsSaved = result?.isSaved !== undefined ? result.isSaved : !isSaved;
+
+      setIsSaved(newIsSaved);
+
+      if (typeof window !== 'undefined') {
+        try {
+          const savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '{}');
+          if (newIsSaved) {
+            savedPosts[postId] = true;
+          } else {
+            delete savedPosts[postId];
+          }
+          localStorage.setItem('savedPosts', JSON.stringify(savedPosts));
+        } catch (e) {
+          console.warn('LocalStorage error', e);
+        }
+      }
+
+      toast(newIsSaved ? 'Post saved to your collection!' : 'Post removed from collection', 'success');
+    } catch (err) {
+      toast(err.message || 'Failed to save post', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Handle share
@@ -300,10 +341,12 @@ export default function Post() {
       <div className="layout-container mt-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* Responsive Actions Bar */}
         <div className="lg:col-span-2 relative">
-          <PostActions 
+          <PostActions
             likes={likes}
             isLiked={isLiked}
+            isSaved={isSaved}
             isLiking={isLiking}
+            isSaving={isSaving}
             handleLike={handleLike}
             handleSave={handleSave}
             handleShare={handleShare}
