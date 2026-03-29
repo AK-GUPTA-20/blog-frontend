@@ -4,7 +4,7 @@ const BASE_URL = buildApiUrl(`${API_PREFIX}/auth`);
 const TOKEN_KEY = 'velora_token';
 const USER_KEY = 'velora_user';
 
-// Safe localStorage wrappers to prevent synchronous crashes
+// Safe localStorage 
 const safeStorage = {
   getItem(key) {
     if (typeof window === 'undefined') return null;
