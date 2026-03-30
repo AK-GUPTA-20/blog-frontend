@@ -7,29 +7,7 @@ export default defineConfig({
     target: 'esnext',
     minify: 'esbuild',
     cssMinify: true,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'vendor-react'
-            }
-            // Bundle React-dependent libraries with React
-            if (id.includes('framer-motion') || 
-                id.includes('lucide-react') || 
-                id.includes('recharts') ||
-                id.includes('@tanstack/react-query')) {
-              return 'vendor-react'
-            }
-            if (id.includes('@sentry')) {
-              return 'vendor-sentry'
-            }
-            return 'vendor'
-          }
-        },
-      },
-    },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1600,
   },
   server: {
     port: 5173,
