@@ -14,14 +14,15 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
               return 'vendor-react'
             }
+            // Bundle React-dependent libraries with React
+            if (id.includes('framer-motion') || 
+                id.includes('lucide-react') || 
+                id.includes('recharts') ||
+                id.includes('@tanstack/react-query')) {
+              return 'vendor-react'
+            }
             if (id.includes('@sentry')) {
               return 'vendor-sentry'
-            }
-            if (id.includes('framer-motion')) {
-              return 'vendor-framer'
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-lucide'
             }
             return 'vendor'
           }
@@ -37,7 +38,7 @@ export default defineConfig({
         target: 'https://blog-backend-mueu.onrender.com',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path, // Keep the path as-is
+        rewrite: (path) => path,
         headers: {
           'Access-Control-Allow-Origin': '*',
         },
