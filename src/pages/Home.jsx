@@ -1,8 +1,21 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, ArrowRight, Quote, AlertCircle, RotateCcw, TrendingUp } from 'lucide-react';
-import { getTopAuthors, getAllAuthors, getFeaturedPosts, getAllPosts, getTopPosts } from '../services/postApi';
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Search,
+  ArrowRight,
+  Quote,
+  AlertCircle,
+  RotateCcw,
+  TrendingUp,
+} from 'lucide-react'
+import {
+  getFeaturedPosts,
+  getAllPosts,
+  getTopPosts,
+} from '../services/postApi'
+import { useTopAuthors, useAllAuthors } from '../hooks/useFollow'
+import { FollowButton } from '../components/follow/FollowButton'
 
 // ===== ANIMATED COMPONENTS =====
 const AnimatedSection = ({ children, delay = 0 }) => (
@@ -14,14 +27,14 @@ const AnimatedSection = ({ children, delay = 0 }) => (
   >
     {children}
   </motion.div>
-);
+)
 
 const SkeletonLoader = ({ type = 'card', count = 1 }) => {
   const variants = {
     card: 'bg-surface-container-high rounded-xl p-6 md:p-8 h-32',
     author: 'flex flex-col items-center gap-4',
-    blog: 'bg-surface-container-high rounded-xl p-6 md:p-8'
-  };
+    blog: 'bg-surface-container-high rounded-xl p-6 md:p-8',
+  }
 
   return (
     <>
@@ -44,8 +57,8 @@ const SkeletonLoader = ({ type = 'card', count = 1 }) => {
         </div>
       ))}
     </>
-  );
-};
+  )
+}
 
 const ErrorState = ({ message, onRetry, compact = false }) => (
   <motion.div
@@ -67,7 +80,7 @@ const ErrorState = ({ message, onRetry, compact = false }) => (
       )}
     </div>
   </motion.div>
-);
+)
 
 // ===== MEMOIZED CARD COMPONENTS =====
 const BlogCardSmall = React.memo(({ post, index }) => (
@@ -96,13 +109,18 @@ const BlogCardSmall = React.memo(({ post, index }) => (
         </p>
       </div>
       <div className="pt-4 border-t border-outline-variant/20 flex items-center justify-between relative z-10 mt-4">
-        <span className="text-xs font-bold text-on-surface-variant">READ ARTICLE</span>
-        <ArrowRight size={16} className="text-primary group-hover:translate-x-2 transition-transform" />
+        <span className="text-xs font-bold text-on-surface-variant">
+          READ ARTICLE
+        </span>
+        <ArrowRight
+          size={16}
+          className="text-primary group-hover:translate-x-2 transition-transform"
+        />
       </div>
     </Link>
   </motion.div>
-));
-BlogCardSmall.displayName = 'BlogCardSmall';
+))
+BlogCardSmall.displayName = 'BlogCardSmall'
 
 const AuthorCard = React.memo(({ author, index, getFallbackAvatar }) => {
   return (
@@ -125,28 +143,37 @@ const AuthorCard = React.memo(({ author, index, getFallbackAvatar }) => {
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
         </div>
-        <div className="text-center">
-          <h4 className="font-headline font-bold text-xl mb-1 line-clamp-1">{author.name}</h4>
+        <div className="text-center w-full">
+          <h4 className="font-headline font-bold text-xl mb-1 line-clamp-1">    
+            {author.name}
+          </h4>
           <p className="text-xs text-primary font-bold tracking-widest uppercase mb-2">
             {author.role === 'admin' ? 'Verified Author' : 'Author'}
           </p>
-          <p className="text-xs text-on-surface-variant line-clamp-2 px-2 min-h-[2rem] flex items-center justify-center">
-            {author.bio && author.bio.trim() ? author.bio : 'Not added yet'}
+          <p className="text-xs text-on-surface-variant line-clamp-2 px-2 min-h-[2rem] flex items-center justify-center mb-3">
+            {author.bio && author.bio.trim() ? author.bio : 'Not added yet'}    
           </p>
         </div>
       </Link>
+      <div className="w-full px-4 mt-2 mb-4">
+        <FollowButton
+          userId={author._id}
+          initialIsFollowing={author.isFollowing}
+          className="w-full"
+        />
+      </div>
     </motion.div>
-  );
-});
-AuthorCard.displayName = 'AuthorCard';
+  )
+})
+AuthorCard.displayName = 'AuthorCard'
 
-const TopBlogCard = React.memo(({ blog, index, getPostImage, getReadTime }) => {
+const TopBlogCard = React.memo(({ blog, index, getPostImage, getReadTime, getFallbackAvatar }) => {
   const colors = [
     'hover:border-violet-500/30 before:bg-[radial-gradient(circle_at_50%_0%,rgba(139,92,246,0.1),transparent_70%)]',
     'hover:border-amber-500/30 before:bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.1),transparent_70%)]',
     'hover:border-teal-500/30 before:bg-[radial-gradient(circle_at_50%_0%,rgba(20,184,166,0.1),transparent_70%)]',
-    'hover:border-rose-500/30 before:bg-[radial-gradient(circle_at_50%_0%,rgba(244,63,94,0.1),transparent_70%)]'
-  ];
+    'hover:border-rose-500/30 before:bg-[radial-gradient(circle_at_50%_0%,rgba(244,63,94,0.1),transparent_70%)]',
+  ]
 
   return (
     <motion.div
@@ -157,19 +184,31 @@ const TopBlogCard = React.memo(({ blog, index, getPostImage, getReadTime }) => {
       className={`bg-surface p-6 md:p-8 rounded-xl group hover:translate-y-[-8px] transition-all duration-300 border border-surface-container-high relative overflow-hidden before:absolute before:inset-0 ${colors[index % colors.length]}`}
     >
       <div className="relative z-10 flex flex-col h-full">
-        <div className="mb-6">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-surface-container-high group-hover:border-primary transition-colors mb-4">
-            <img
-              loading="lazy"
-              decoding="async"
-              src={getPostImage(blog)}
-              alt={blog.title}
-              className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
-            />
+        <div className="mb-6 flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-surface-container-high group-hover:border-primary transition-colors">
+              <img
+                loading="lazy"
+                decoding="async"
+                src={blog?.author?.avatar || getFallbackAvatar(blog?.author?.name || 'Author')}
+                alt={blog?.author?.name || 'Author'}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-on-surface flex items-center gap-1">
+                {blog?.author?.name || 'Unknown Author'}
+                {blog?.author?.role === 'admin' && (
+                  <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </span>
+              <span className="text-primary text-[10px] font-bold tracking-widest uppercase mt-0.5">
+                {blog.category || 'General'}
+              </span>
+            </div>
           </div>
-          <span className="text-primary text-xs font-bold tracking-widest uppercase">
-            {blog.category || 'General'}
-          </span>
         </div>
 
         <h3 className="font-headline text-base md:text-lg font-bold mb-2 line-clamp-2 group-hover:text-primary transition-colors min-h-[3rem] flex items-start">
@@ -195,72 +234,55 @@ const TopBlogCard = React.memo(({ blog, index, getPostImage, getReadTime }) => {
         </Link>
       </div>
     </motion.div>
-  );
-});
-TopBlogCard.displayName = 'TopBlogCard';
+  )
+})
+TopBlogCard.displayName = 'TopBlogCard'
 
 // ===== MAIN COMPONENT =====
 export default function Home() {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [topAuthors, setTopAuthors] = useState([]);
-  const [isLoadingAuthors, setIsLoadingAuthors] = useState(true);
-  const [authorsError, setAuthorsError] = useState(null);
-  const [totalAuthors, setTotalAuthors] = useState(0);
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const [latestPosts, setLatestPosts] = useState([]);
-  const [topPosts, setTopPosts] = useState([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [dataError, setDataError] = useState(null);
+  const { data: topAuthorsData, isLoading: isLoadingAuthors1, error: authorsError1 } = useTopAuthors(4)
+  const { data: allAuthorsData, isLoading: isLoadingAuthors2, error: authorsError2 } = useAllAuthors({ page: 1, limit: 1 })
+  const topAuthors = topAuthorsData?.data || []
+  const totalAuthors = allAuthorsData?.total || 0
+  const isLoadingAuthors = isLoadingAuthors1 || isLoadingAuthors2
+  const authorsError = authorsError1 || authorsError2
+
+  const [latestPosts, setLatestPosts] = useState([])
+  const [topPosts, setTopPosts] = useState([])
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [dataError, setDataError] = useState(null)
 
   useEffect(() => {
-    loadAuthors();
-    loadData();
-  }, []);
+    loadData()
+  }, [])
 
   const loadData = useCallback(async () => {
-    setIsLoadingData(true);
-    setDataError(null);
+    setIsLoadingData(true)
+    setDataError(null)
     try {
       const [latestRes, featuredRes, topRes] = await Promise.all([
         getAllPosts(1, 4),
         getFeaturedPosts(),
-        getTopPosts()
-      ]);
-      setLatestPosts(latestRes?.data || []);
-      setTopPosts(topRes?.data || []);
+        getTopPosts(),
+      ])
+      setLatestPosts(latestRes?.data || [])
+      setTopPosts(topRes?.data || [])
     } catch (e) {
-      console.error('Error loading posts:', e);
-      setLatestPosts([]);
-      setTopPosts([]);
-      setDataError('Failed to load posts. Please try again.');
+      console.error('Error loading posts:', e)
+      setLatestPosts([])
+      setTopPosts([])
+      setDataError('Failed to load posts. Please try again.')
     } finally {
-      setIsLoadingData(false);
+      setIsLoadingData(false)
     }
-  }, []);
-
-  const loadAuthors = useCallback(async () => {
-    setIsLoadingAuthors(true);
-    setAuthorsError(null);
-    try {
-      const topResponse = await getTopAuthors(4);
-      setTopAuthors(topResponse?.data || []);
-
-      const allResponse = await getAllAuthors(1, 1);
-      setTotalAuthors(allResponse?.total || 0);
-    } catch (err) {
-      console.error('Error loading authors:', err);
-      setTopAuthors([]);
-      setTotalAuthors(0);
-      setAuthorsError('Failed to load authors.');
-    } finally {
-      setIsLoadingAuthors(false);
-    }
-  }, []);
+  }, [])
 
   const getFallbackAvatar = useCallback((name) => {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`;
-  }, []);
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=150`
+  }, [])
 
   const getPostImage = useCallback((post) => {
     return (
@@ -268,38 +290,46 @@ export default function Home() {
       post?.coverImage ||
       post?.image ||
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'
-    );
-  }, []);
+    )
+  }, [])
 
   const getReadTime = useCallback((post) => {
-    const readingTime = post?.stats?.readingTime || 5;
-    return `${readingTime} min read`;
-  }, []);
+    if (post?.stats?.readingTime) return `${post.stats.readingTime} min read`
+    // Dynamic fallback calculation based on content length
+    const content = post?.content || post?.description || ''
+    const wordCount = content.split(/\s+/).length
+    // Assuming 200 words per minute, min 1 min 
+    const readingTime = Math.max(1, Math.ceil((wordCount || 1000) / 200))
+    return `${readingTime} min read`
+  }, [])
 
-  const handleSearch = useCallback((e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/blogs?q=${encodeURIComponent(searchQuery)}`);
-    }
-  }, [searchQuery, navigate]);
+  const handleSearch = useCallback(
+    (e) => {
+      e.preventDefault()
+      if (searchQuery.trim()) {
+        navigate(`/blogs?q=${encodeURIComponent(searchQuery)}`)
+      }
+    },
+    [searchQuery, navigate]
+  )
 
   const handleSubscribe = useCallback((e) => {
-    e.preventDefault();
-    alert('Thank you for subscribing!');
-  }, []);
+    e.preventDefault()
+    alert('Thank you for subscribing!')
+  }, [])
 
   // Focus search effect
   React.useEffect(() => {
     const handleFocusSearch = () => {
-      const searchInput = document.getElementById('home-search-input');
+      const searchInput = document.getElementById('home-search-input')
       if (searchInput) {
-        searchInput.focus();
-        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        searchInput.focus()
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
-    };
-    window.addEventListener('focusSearch', handleFocusSearch);
-    return () => window.removeEventListener('focusSearch', handleFocusSearch);
-  }, []);
+    }
+    window.addEventListener('focusSearch', handleFocusSearch)
+    return () => window.removeEventListener('focusSearch', handleFocusSearch)
+  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -310,7 +340,7 @@ export default function Home() {
         delayChildren: 0.2,
       },
     },
-  };
+  }
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -319,7 +349,7 @@ export default function Home() {
       y: 0,
       transition: { duration: 0.4 },
     },
-  };
+  }
 
   return (
     <div className="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
@@ -333,14 +363,23 @@ export default function Home() {
                   Editorial Excellence
                 </span>
                 <h1 className="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.05] text-on-surface mb-8 text-glow">
-                  Thoughts in Motion,<br />Stories in Style
+                  Thoughts in Motion,
+                  <br />
+                  Stories in Style
                 </h1>
                 <p className="text-xl text-on-surface-variant leading-relaxed mb-10 max-w-lg">
-                  Dive into a curated archive of contemporary culture, minimalist design, and the minds shaping our digital future.
+                  Dive into a curated archive of contemporary culture,
+                  minimalist design, and the minds shaping our digital future.
                 </p>
                 <div className="flex items-center gap-6 flex-wrap">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link to="/blogs" className="group flex items-center gap-3 bg-surface-bright p-1 pr-6 rounded-full hover:bg-surface-container-highest transition-all duration-300">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Link
+                      to="/blogs"
+                      className="group flex items-center gap-3 bg-surface-bright p-1 pr-6 rounded-full hover:bg-surface-container-highest transition-all duration-300"
+                    >
                       <span className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
                         <ArrowRight size={20} />
                       </span>
@@ -365,7 +404,9 @@ export default function Home() {
                             decoding="async"
                             className="w-10 h-10 rounded-full border-2 border-surface object-cover hover:scale-110 transition-transform"
                             alt={author.name}
-                            src={author.avatar || getFallbackAvatar(author.name)}
+                            src={
+                              author.avatar || getFallbackAvatar(author.name)
+                            }
                             title={author.name}
                           />
                         ))}
@@ -391,9 +432,12 @@ export default function Home() {
                 viewport={{ once: true }}
               >
                 {latestPosts[0] && (
-                  <Link to={`/post/${latestPosts[0].slug}`} className="block relative rounded-xl overflow-hidden shadow-2xl group cursor-pointer aspect-[4/3]">
+                  <Link
+                    to={`/post/${latestPosts[0].slug}`}
+                    className="block relative rounded-xl overflow-hidden shadow-2xl group cursor-pointer aspect-[4/3]"
+                  >
                     <img
-                      loading="lazy"
+                      fetchpriority="high"
                       decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       alt={latestPosts[0].title}
@@ -412,10 +456,15 @@ export default function Home() {
                           <span className="text-sm text-on-surface-variant">
                             {getReadTime(latestPosts[0])} •{' '}
                             {latestPosts[0]?.createdAt
-                              ? new Date(latestPosts[0]?.createdAt).toLocaleDateString()
+                              ? new Date(
+                                  latestPosts[0]?.createdAt
+                                ).toLocaleDateString()
                               : 'Today'}
                           </span>
-                          <ArrowRight size={20} className="text-primary transform -rotate-45" />
+                          <ArrowRight
+                            size={20}
+                            className="text-primary transform -rotate-45"
+                          />
                         </div>
                       </div>
                     </div>
@@ -431,8 +480,14 @@ export default function Home() {
         <AnimatedSection delay={0.2}>
           <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
-              <form onSubmit={handleSearch} className="relative w-full md:w-96 group">
-                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" />
+              <form
+                onSubmit={handleSearch}
+                className="relative w-full md:w-96 group"
+              >
+                <Search
+                  size={20}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors"
+                />
                 <input
                   id="home-search-input"
                   aria-label="Search the archive"
@@ -445,7 +500,10 @@ export default function Home() {
                 <div className="absolute inset-0 rounded-md ring-2 ring-primary opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity pointer-events-none"></div>
               </form>
               <div className="flex flex-wrap items-center gap-3">
-                <Link to="/blogs" className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold text-sm hover:shadow-lg transition-all">
+                <Link
+                  to="/blogs"
+                  className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold text-sm hover:shadow-lg transition-all"
+                >
                   All
                 </Link>
                 <Link
@@ -482,12 +540,22 @@ export default function Home() {
           <section className="max-w-7xl mx-auto px-4 md:px-8 mb-32">
             <div className="flex justify-between items-end mb-12">
               <div>
-                <h2 className="font-headline text-4xl font-bold tracking-tight mb-2">Latest Insights</h2>
-                <p className="text-on-surface-variant">Deep dives into the trends that define tomorrow.</p>
+                <h2 className="font-headline text-4xl font-bold tracking-tight mb-2">
+                  Latest Insights
+                </h2>
+                <p className="text-on-surface-variant">
+                  Deep dives into the trends that define tomorrow.
+                </p>
               </div>
-              <Link to="/blogs" className="text-primary font-bold flex items-center gap-2 group whitespace-nowrap hover:gap-3 transition-all">
+              <Link
+                to="/blogs"
+                className="text-primary font-bold flex items-center gap-2 group whitespace-nowrap hover:gap-3 transition-all"
+              >
                 View all stories
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
@@ -506,9 +574,12 @@ export default function Home() {
                   viewport={{ once: true }}
                   className="md:col-span-6"
                 >
-                  <Link to={`/post/${latestPosts[0].slug}`} className="md:col-span-6 group relative overflow-hidden rounded-xl bg-surface-container-low h-[400px] md:h-[500px] block">
+                  <Link
+                    to={`/post/${latestPosts[0].slug}`}
+                    className="md:col-span-6 group relative overflow-hidden rounded-xl bg-surface-container-low h-[400px] md:h-[500px] block"
+                  >
                     <img
-                      loading="lazy"
+                      fetchpriority="high"
                       decoding="async"
                       className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
                       alt={latestPosts[0].title}
@@ -528,13 +599,25 @@ export default function Home() {
                           decoding="async"
                           className="w-10 h-10 rounded-full object-cover"
                           alt={latestPosts[0]?.author?.name || 'Anonymous'}
-                          src={latestPosts[0]?.author?.avatar || getFallbackAvatar(latestPosts[0]?.author?.name)}
+                          src={
+                            latestPosts[0]?.author?.avatar ||
+                            getFallbackAvatar(latestPosts[0]?.author?.name)
+                          }
                         />
                         <div>
-                          <p className="font-bold text-sm">{latestPosts[0]?.author?.name || 'Anonymous'}</p>
+                            <p className="font-bold text-sm flex items-center gap-1">
+                              {latestPosts[0]?.author?.name || 'Anonymous'}
+                              {latestPosts[0]?.author?.role === 'admin' && (
+                                <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                          </p>
                           <p className="text-xs text-on-surface-variant">
                             {latestPosts[0]?.createdAt
-                              ? new Date(latestPosts[0]?.createdAt).toLocaleDateString()
+                              ? new Date(
+                                  latestPosts[0]?.createdAt
+                                ).toLocaleDateString()
                               : 'Today'}{' '}
                             • {getReadTime(latestPosts[0])}
                           </p>
@@ -552,9 +635,19 @@ export default function Home() {
                 ) : dataError ? (
                   <ErrorState message={dataError} onRetry={loadData} compact />
                 ) : latestPosts.slice(1, 3).length > 0 ? (
-                  <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-8">
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    className="space-y-8"
+                  >
                     {latestPosts.slice(1, 3).map((post, index) => (
-                      <BlogCardSmall key={post._id || index} post={post} index={index} />
+                      <BlogCardSmall
+                        key={post._id || index}
+                        post={post}
+                        index={index}
+                      />
                     ))}
                   </motion.div>
                 ) : (
@@ -570,12 +663,22 @@ export default function Home() {
           <section className="max-w-7xl mx-auto px-4 md:px-8 mb-24">
             <div className="flex justify-between items-end mb-12">
               <div>
-                <h2 className="font-headline text-4xl font-bold tracking-tight mb-2">Featured Minds</h2>
-                <p className="text-on-surface-variant">Voices shaping our culture and design.</p>
+                <h2 className="font-headline text-4xl font-bold tracking-tight mb-2">
+                  Featured Minds
+                </h2>
+                <p className="text-on-surface-variant">
+                  Voices shaping our culture and design.
+                </p>
               </div>
-              <Link to="/authors" className="text-primary font-bold flex items-center gap-2 group whitespace-nowrap hover:gap-3 transition-all">
+              <Link
+                to="/authors"
+                className="text-primary font-bold flex items-center gap-2 group whitespace-nowrap hover:gap-3 transition-all"
+              >
                 All authors
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -594,7 +697,12 @@ export default function Home() {
                   viewport={{ once: true }}
                 >
                   {topAuthors.slice(0, 4).map((author, index) => (
-                    <AuthorCard key={author._id} author={author} index={index} getFallbackAvatar={getFallbackAvatar} />
+                    <AuthorCard
+                      key={author._id}
+                      author={author}
+                      index={index}
+                      getFallbackAvatar={getFallbackAvatar}
+                    />
                   ))}
                 </motion.div>
               ) : (
@@ -611,7 +719,9 @@ export default function Home() {
           <section className="bg-surface-container-low py-24 md:py-32 rounded-[4rem] mb-32 mx-4 md:mx-0">
             <div className="max-w-7xl mx-auto px-4 md:px-8">
               <div className="text-center mb-16 md:mb-20">
-                <h2 className="font-headline text-3xl md:text-4xl font-extrabold mb-4">Top Blogs</h2>
+                <h2 className="font-headline text-3xl md:text-4xl font-extrabold mb-4">
+                  Top Blogs
+                </h2>
                 <p className="text-on-surface-variant text-base md:text-lg">
                   The most featured stories from our community.
                 </p>
@@ -639,6 +749,7 @@ export default function Home() {
                         index={idx}
                         getPostImage={getPostImage}
                         getReadTime={getReadTime}
+                        getFallbackAvatar={getFallbackAvatar}
                       />
                     ))}
                   </motion.div>
@@ -669,12 +780,16 @@ export default function Home() {
                     Join the Archive.
                   </h2>
                   <p className="text-lg text-on-surface-variant leading-relaxed">
-                    Get exclusive insights, editorial picks, and stories from the Velora Journal delivered directly
-                    to your inbox every Sunday.
+                    Get exclusive insights, editorial picks, and stories from
+                    the Velora Journal delivered directly to your inbox every
+                    Sunday.
                   </p>
                 </div>
                 <div className="w-full lg:w-auto">
-                  <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 w-full">
+                  <form
+                    onSubmit={handleSubscribe}
+                    className="flex flex-col sm:flex-row gap-4 w-full"
+                  >
                     <input
                       required
                       aria-label="Email address for newsletter"
@@ -703,5 +818,5 @@ export default function Home() {
         </AnimatedSection>
       </main>
     </div>
-  );
+  )
 }

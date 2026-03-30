@@ -1,20 +1,30 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Skeleton } from '../components/ui/skeleton';
-import { getAllPosts, getPostsByCategory, searchPosts } from '../services/postApi';
-import { AlertCircle, RefreshCw, BookOpen, Eye, Flame, TrendingUp, Filter, X } from 'lucide-react';
-import { toast } from '../components/Toast';
+import React, { useEffect, useState, useCallback } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Skeleton } from '../components/ui/skeleton'
+import {
+  getAllPosts,
+  getPostsByCategory,
+  searchPosts,
+} from '../services/postApi'
+import {
+  AlertCircle,
+  RefreshCw,
+  BookOpen,
+  Eye,
+  Flame,
+  TrendingUp,
+  Filter,
+  X,
+} from 'lucide-react'
+import { toast } from '../components/Toast'
 
-  
 // PLACEHOLDER IMAGE - NO EXTERNAL REQUESTS
-  
 
-const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3EArticle Image%3C/text%3E%3C/svg%3E';
+const PLACEHOLDER_IMAGE =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3EArticle Image%3C/text%3E%3C/svg%3E'
 
-  
 // SKELETON COMPONENTS
-  
 
 function BlogCardSkeleton({ delay = 0 }) {
   return (
@@ -52,12 +62,10 @@ function BlogCardSkeleton({ delay = 0 }) {
         </div>
       </div>
     </motion.article>
-  );
+  )
 }
 
-  
 // STATE COMPONENTS
-  
 
 function ErrorState({ error, onRetry }) {
   return (
@@ -92,7 +100,7 @@ function ErrorState({ error, onRetry }) {
         </motion.button>
       </div>
     </motion.div>
-  );
+  )
 }
 
 function EmptyState() {
@@ -112,23 +120,30 @@ function EmptyState() {
         </p>
       </div>
     </motion.div>
-  );
+  )
 }
 
 function LoadingIndicator() {
   return (
     <div className="flex items-center justify-center gap-2 text-on-surface-variant">
-      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+      <div
+        className="w-2 h-2 bg-primary rounded-full animate-bounce"
+        style={{ animationDelay: '0ms' }}
+      />
+      <div
+        className="w-2 h-2 bg-primary rounded-full animate-bounce"
+        style={{ animationDelay: '150ms' }}
+      />
+      <div
+        className="w-2 h-2 bg-primary rounded-full animate-bounce"
+        style={{ animationDelay: '300ms' }}
+      />
       <span className="text-sm ml-2">Loading blogs...</span>
     </div>
-  );
+  )
 }
 
-  
 // HEADER SECTION COMPONENT
-  
 
 function HeaderSection({ blogCount }) {
   return (
@@ -147,7 +162,8 @@ function HeaderSection({ blogCount }) {
           The Archive
         </h1>
         <p className="text-lg text-on-surface-variant font-body">
-          Explore all our featured publications, insights, and stories in one place.
+          Explore all our featured publications, insights, and stories in one
+          place.
         </p>
       </div>
 
@@ -168,7 +184,9 @@ function HeaderSection({ blogCount }) {
           className="glass-card rounded-full px-6 py-3 border border-surface-variant/30 backdrop-blur-sm flex items-center gap-2"
         >
           <TrendingUp className="w-4 h-4 text-primary" />
-          <span className="text-sm text-on-surface-variant">Quality Content</span>
+          <span className="text-sm text-on-surface-variant">
+            Quality Content
+          </span>
         </motion.div>
 
         <motion.div
@@ -180,39 +198,37 @@ function HeaderSection({ blogCount }) {
         </motion.div>
       </div>
     </motion.div>
-  );
+  )
 }
 
-  
 // MAIN COMPONENT
-  
 
 export default function Blogs() {
-  const [blogs, setBlogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalBlogs, setTotalBlogs] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [showFilterModal, setShowFilterModal] = useState(false);
-    const [searchParams, setSearchParams] = useSearchParams();
+  const [blogs, setBlogs] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalBlogs, setTotalBlogs] = useState(0)
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
 
-    const limit = 10;
-    const categories = [
-      { value: 'all', label: 'All Categories' },
-      { value: 'Technology', label: 'Technology' },
-      { value: 'Lifestyle', label: 'Lifestyle' },
-      { value: 'Travel', label: 'Travel' },
-      { value: 'Food', label: 'Food' },
-      { value: 'Business', label: 'Business' },
-      { value: 'Health', label: 'Health' },
-      { value: 'Education', label: 'Education' },
-      { value: 'Entertainment', label: 'Entertainment' },
-      { value: 'Sports', label: 'Sports' },
-      { value: 'Other', label: 'Other' },
-    ];
+  const limit = 10
+  const categories = [
+    { value: 'all', label: 'All Categories' },
+    { value: 'Technology', label: 'Technology' },
+    { value: 'Lifestyle', label: 'Lifestyle' },
+    { value: 'Travel', label: 'Travel' },
+    { value: 'Food', label: 'Food' },
+    { value: 'Business', label: 'Business' },
+    { value: 'Health', label: 'Health' },
+    { value: 'Education', label: 'Education' },
+    { value: 'Entertainment', label: 'Entertainment' },
+    { value: 'Sports', label: 'Sports' },
+    { value: 'Other', label: 'Other' },
+  ]
   const cardColors = [
     'hover:border-violet-500/40 hover:bg-violet-500/5 dark:hover:bg-violet-500/10 hover:shadow-[0_0_40px_-10px_rgba(139,92,246,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(139,92,246,0.3)]',
     'hover:border-amber-500/40 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 hover:shadow-[0_0_40px_-10px_rgba(245,158,11,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(245,158,11,0.3)]',
@@ -220,86 +236,86 @@ export default function Blogs() {
     'hover:border-rose-500/40 hover:bg-rose-500/5 dark:hover:bg-rose-500/10 hover:shadow-[0_0_40px_-10px_rgba(244,63,94,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(244,63,94,0.3)]',
     'hover:border-blue-500/40 hover:bg-blue-500/5 dark:hover:bg-blue-500/10 hover:shadow-[0_0_40px_-10px_rgba(59,130,246,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(59,130,246,0.3)]',
     'hover:border-emerald-500/40 hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10 hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.3)]',
-  ];
+  ]
 
   /**
    * Load blogs from API
    */
   const loadBlogs = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
-      const query = searchParams.get('q');
-      const categoryParam = searchParams.get('category');
-      const activeCategory = categoryParam || selectedCategory;
+    const query = searchParams.get('q')
+    const categoryParam = searchParams.get('category')
+    const activeCategory = categoryParam || selectedCategory
 
-      try {
-        let response;
+    try {
+      let response
 
-        if (query) {
-          response = await searchPosts(query);
-        } else if (activeCategory === 'all') {
-          response = await getAllPosts(currentPage, limit);
-        } else {
-          response = await getPostsByCategory(activeCategory, currentPage, limit);
-        }
-
-        let data = response?.data || response || [];
-
-        if (Array.isArray(response)) {
-          data = response;
-        } else if (!Array.isArray(data)) {
-          data = [];
-        }
-
-        setBlogs(data);
-        setTotalBlogs(response?.total || data.length);
-        setTotalPages(response?.pages || 1);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setIsLoading(false);
+      if (query) {
+        response = await searchPosts(query)
+      } else if (activeCategory === 'all') {
+        response = await getAllPosts(currentPage, limit)
+      } else {
+        response = await getPostsByCategory(activeCategory, currentPage, limit)
       }
-    }, [currentPage, selectedCategory, limit, searchParams]);
+
+      let data = response?.data || response || []
+
+      if (Array.isArray(response)) {
+        data = response
+      } else if (!Array.isArray(data)) {
+        data = []
+      }
+
+      setBlogs(data)
+      setTotalBlogs(response?.total || data.length)
+      setTotalPages(response?.pages || 1)
+    } catch (err) {
+      setError(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [currentPage, selectedCategory, limit, searchParams])
   const handleRetry = useCallback(() => {
-    setRetryCount((prev) => prev + 1);
-    loadBlogs();
-  }, [loadBlogs]);
+    setRetryCount((prev) => prev + 1)
+    loadBlogs()
+  }, [loadBlogs])
 
   /**
    * Handle category filter
    */
   const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
-      setSearchParams({ category });
-      setCurrentPage(1);
-      setShowFilterModal(false);
-    };
+    setSelectedCategory(category)
+    setSearchParams({ category })
+    setCurrentPage(1)
+    setShowFilterModal(false)
+  }
 
-    /**
-     * Handle clear filter (go back)
-     */
-    const handleClearFilter = () => {
-      setSelectedCategory('all');
-      setSearchParams({});
-  };
+  /**
+   * Handle clear filter (go back)
+   */
+  const handleClearFilter = () => {
+    setSelectedCategory('all')
+    setSearchParams({})
+  }
 
-useEffect(() => {
-      const qCat = searchParams.get('category');
-      if (qCat && qCat !== selectedCategory) {
-        setSelectedCategory(qCat);
-      } else if (!qCat && selectedCategory !== 'all') {
-        setSelectedCategory('all');
-      }
-    }, [searchParams, selectedCategory]);
+  useEffect(() => {
+    const qCat = searchParams.get('category')
+    if (qCat && qCat !== selectedCategory) {
+      setSelectedCategory(qCat)
+    } else if (!qCat && selectedCategory !== 'all') {
+      setSelectedCategory('all')
+    }
+  }, [searchParams, selectedCategory])
 
-    /**
+  /**
    * Load blogs on mount and when filters change
    */
   useEffect(() => {
-    window.scrollTo(0, 0);
-    loadBlogs();
-  }, [loadBlogs]);
+    window.scrollTo(0, 0)
+    loadBlogs()
+  }, [loadBlogs])
 
   /**
    * Render loading skeleton state
@@ -327,7 +343,7 @@ useEffect(() => {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   /**
@@ -339,7 +355,7 @@ useEffect(() => {
         <HeaderSection blogCount={0} />
         <ErrorState error={error} onRetry={handleRetry} />
       </div>
-    );
+    )
   }
 
   /**
@@ -351,7 +367,7 @@ useEffect(() => {
         <HeaderSection blogCount={0} />
         <EmptyState />
       </div>
-    );
+    )
   }
 
   /**
@@ -374,7 +390,9 @@ useEffect(() => {
             >
               <Filter size={20} />
               <span className="font-semibold">
-                {selectedCategory === 'all' ? 'All Categories' : selectedCategory}
+                {selectedCategory === 'all'
+                  ? 'All Categories'
+                  : selectedCategory}
               </span>
             </motion.button>
 
@@ -428,32 +446,38 @@ useEffect(() => {
         {/* Blog Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
           {blogs.map((post, i) => {
-            const postId = post.id || post._id;
-            const postSlug = post.slug;
-            const postImage = post.featuredImage || post.image || post.thumbnail || PLACEHOLDER_IMAGE;
-            const postTitle = post.title || 'Untitled';
-            const postCategory = post.category || 'Uncategorized';
-            const readTime = post.stats?.readingTime || post.readTime || '1 min read';
-            const views = post.stats?.views || post.views || 0;
-            const publishedDate = post.publishedAt || post.createdAt;
+            const postId = post.id || post._id
+            const postSlug = post.slug
+            const postImage =
+              post.featuredImage ||
+              post.image ||
+              post.thumbnail ||
+              PLACEHOLDER_IMAGE
+            const postTitle = post.title || 'Untitled'
+            const postCategory = post.category || 'Uncategorized'
+            const readTime =
+              post.stats?.readingTime || post.readTime || '1 min read'
+            const views = post.stats?.views || post.views || 0
+            const publishedDate = post.publishedAt || post.createdAt
 
             // Author Info
-            const authorId = post.author?.id || post.author?._id || postId;
-            const authorName = post.author?.name || 'Anonymous';
-            const authorAvatar = post.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`;
+            const authorId = post.author?.id || post.author?._id || postId
+            const authorName = post.author?.name || 'Anonymous'
+            const authorAvatar =
+              post.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`
 
             // Format date
-            let formattedDate = '';
+            let formattedDate = ''
             if (publishedDate) {
               try {
-                const date = new Date(publishedDate);
+                const date = new Date(publishedDate)
                 formattedDate = date.toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric',
-                });
+                })
               } catch (e) {
-                formattedDate = publishedDate;
+                formattedDate = publishedDate
               }
             }
 
@@ -482,7 +506,7 @@ useEffect(() => {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     loading="lazy"
                     onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMAGE;
+                      e.target.src = PLACEHOLDER_IMAGE
                     }}
                   />
 
@@ -498,7 +522,11 @@ useEffect(() => {
                 {/* Content Section */}
                 <div className="px-2 pb-2 flex-1 flex flex-col">
                   {/* Title */}
-                  <Link to={`/post/${postSlug}`} className="flex-1" state={{ post }}>
+                  <Link
+                    to={`/post/${postSlug}`}
+                    className="flex-1"
+                    state={{ post }}
+                  >
                     <h3 className="text-2xl font-headline font-bold leading-tight mb-3 group-hover:text-primary transition-colors line-clamp-2">
                       {postTitle}
                     </h3>
@@ -522,21 +550,25 @@ useEffect(() => {
                         className="w-7 h-7 rounded-full object-cover border border-outline-variant/30 flex-shrink-0"
                         loading="lazy"
                         onError={(e) => {
-                          e.target.src = `https://i.pravatar.cc/150?u=${authorId}`;
+                          e.target.src = `https://i.pravatar.cc/150?u=${authorId}`
                         }}
                       />
-                      <span className="truncate font-medium text-on-surface-variant">{authorName}</span>
+                      <span className="truncate font-medium text-on-surface-variant">
+                        {authorName}
+                      </span>
                     </div>
 
                     {/* Views */}
                     <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                       <Eye size={14} className="text-primary" />
-                      <span className="font-semibold text-on-surface-variant">{views}</span>
+                      <span className="font-semibold text-on-surface-variant">
+                        {views}
+                      </span>
                     </div>
                   </div>
                 </div>
               </motion.article>
-            );
+            )
           })}
         </div>
 
@@ -547,7 +579,7 @@ useEffect(() => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                setCurrentPage((prev) => Math.max(1, prev - 1));
+                setCurrentPage((prev) => Math.max(1, prev - 1))
               }}
               disabled={currentPage === 1}
               className="px-6 py-3 rounded-full glass-card disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all"
@@ -577,7 +609,7 @@ useEffect(() => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
               }}
               disabled={currentPage === totalPages}
               className="px-6 py-3 rounded-full glass-card disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all"
@@ -590,11 +622,16 @@ useEffect(() => {
         {/* Footer Info */}
         <div className="mt-12 text-center text-on-surface-variant text-sm">
           <p>
-            Showing <span className="font-semibold text-on-surface">{blogs.length}</span> of{' '}
-            <span className="font-semibold text-on-surface">{totalBlogs}</span> articles
+            Showing{' '}
+            <span className="font-semibold text-on-surface">
+              {blogs.length}
+            </span>{' '}
+            of{' '}
+            <span className="font-semibold text-on-surface">{totalBlogs}</span>{' '}
+            articles
           </p>
         </div>
       </div>
     </article>
-  );
+  )
 }

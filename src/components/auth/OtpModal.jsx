@@ -1,113 +1,123 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react';
-import { verifyOtp, resendOtp } from '../../services/authApi';
-import { toast } from '../Toast';
-import { Button } from '../ui/button';
+import React, { useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react'
+import { verifyOtp, resendOtp } from '../../services/authApi'
+import { toast } from '../Toast'
+import { Button } from '../ui/button'
 
-export default function OtpModal({ open, onOpenChange, email, onVerified, title = 'Verify your email' }) {
-  const [digits, setDigits] = useState(['', '', '', '', '', '']);
-  const [submitting, setSubmitting] = useState(false);
-  const [resending, setResending] = useState(false);
-  const [countdown, setCountdown] = useState(60);
-  const refs = useRef([]);
-
-  useEffect(() => {
-    if (!open) return;
-    setDigits(['', '', '', '', '', '']);
-    setCountdown(60);
-    const focusTimer = setTimeout(() => refs.current[0]?.focus(), 50);
-    return () => clearTimeout(focusTimer);
-  }, [open]);
+export default function OtpModal({
+  open,
+  onOpenChange,
+  email,
+  onVerified,
+  title = 'Verify your email',
+}) {
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [submitting, setSubmitting] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [countdown, setCountdown] = useState(60)
+  const refs = useRef([])
 
   useEffect(() => {
-    if (!open || countdown <= 0) return;
-    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown, open]);
+    if (!open) return
+    setDigits(['', '', '', '', '', ''])
+    setCountdown(60)
+    const focusTimer = setTimeout(() => refs.current[0]?.focus(), 50)
+    return () => clearTimeout(focusTimer)
+  }, [open])
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || countdown <= 0) return
+    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [countdown, open])
+
+  useEffect(() => {
+    if (!open) return
     const onEsc = (event) => {
-      if (event.key === 'Escape') onOpenChange(false);
-    };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [open, onOpenChange]);
+      if (event.key === 'Escape') onOpenChange(false)
+    }
+    window.addEventListener('keydown', onEsc)
+    return () => window.removeEventListener('keydown', onEsc)
+  }, [open, onOpenChange])
 
   const handleDigit = (index, value) => {
-    const clean = value.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[index] = clean;
-    setDigits(next);
-    if (clean && index < 5) refs.current[index + 1]?.focus();
-  };
+    const clean = value.replace(/\D/g, '').slice(-1)
+    const next = [...digits]
+    next[index] = clean
+    setDigits(next)
+    if (clean && index < 5) refs.current[index + 1]?.focus()
+  }
 
   const handleKeyDown = (index, event) => {
     if (event.key === 'Backspace' && !digits[index] && index > 0) {
-      refs.current[index - 1]?.focus();
-      return;
+      refs.current[index - 1]?.focus()
+      return
     }
     if (event.key === 'ArrowLeft' && index > 0) {
-      refs.current[index - 1]?.focus();
-      return;
+      refs.current[index - 1]?.focus()
+      return
     }
-    if (event.key === 'ArrowRight' && index < 5) refs.current[index + 1]?.focus();
-  };
+    if (event.key === 'ArrowRight' && index < 5)
+      refs.current[index + 1]?.focus()
+  }
 
   const handlePaste = (event) => {
-    const paste = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (paste.length !== 6) return;
-    setDigits(paste.split(''));
-    refs.current[5]?.focus();
-  };
+    const paste = event.clipboardData
+      .getData('text')
+      .replace(/\D/g, '')
+      .slice(0, 6)
+    if (paste.length !== 6) return
+    setDigits(paste.split(''))
+    refs.current[5]?.focus()
+  }
 
   const submitOtp = async (event) => {
-    event.preventDefault();
-    const otp = digits.join('');
+    event.preventDefault()
+    const otp = digits.join('')
     if (otp.length !== 6) {
-      toast('Please enter the full 6-digit OTP.', 'error');
-      return;
+      toast('Please enter the full 6-digit OTP.', 'error')
+      return
     }
 
-    setSubmitting(true);
+    setSubmitting(true)
     try {
-      const data = await verifyOtp({ email, otp });
+      const data = await verifyOtp({ email, otp })
       if (data.success || data.message?.toLowerCase().includes('success')) {
-        toast(data.message || 'Email verified successfully.', 'success');
-        onVerified(data);
-        onOpenChange(false);
+        toast(data.message || 'Email verified successfully.', 'success')
+        onVerified(data)
+        onOpenChange(false)
       } else {
-        toast(data.message || 'Invalid OTP. Please try again.', 'error');
+        toast(data.message || 'Invalid OTP. Please try again.', 'error')
       }
     } catch {
-      toast('Network error while verifying OTP.', 'error');
+      toast('Network error while verifying OTP.', 'error')
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   const resend = async () => {
-    if (countdown > 0 || !email) return;
-    setResending(true);
+    if (countdown > 0 || !email) return
+    setResending(true)
     try {
-      const data = await resendOtp({ email });
+      const data = await resendOtp({ email })
       if (data.success || data.message?.toLowerCase().includes('success')) {
-        toast(data.message || 'OTP resent to your inbox.', 'success');
-        setCountdown(60);
-        setDigits(['', '', '', '', '', '']);
-        refs.current[0]?.focus();
+        toast(data.message || 'OTP resent to your inbox.', 'success')
+        setCountdown(60)
+        setDigits(['', '', '', '', '', ''])
+        refs.current[0]?.focus()
       } else {
-        toast(data.message || 'Could not resend OTP.', 'error');
+        toast(data.message || 'Could not resend OTP.', 'error')
       }
     } catch {
-      toast('Network error while resending OTP.', 'error');
+      toast('Network error while resending OTP.', 'error')
     } finally {
-      setResending(false);
+      setResending(false)
     }
-  };
+  }
 
-  const canSubmit = digits.join('').length === 6 && !submitting;
+  const canSubmit = digits.join('').length === 6 && !submitting
 
   return (
     <AnimatePresence>
@@ -144,21 +154,28 @@ export default function OtpModal({ open, onOpenChange, email, onVerified, title 
               <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <ShieldCheck size={26} />
               </div>
-              <h2 id="otp-modal-title" className="text-2xl font-headline font-bold text-on-surface">
+              <h2
+                id="otp-modal-title"
+                className="text-2xl font-headline font-bold text-on-surface"
+              >
                 {title}
               </h2>
               <p className="mt-2 text-sm text-on-surface-variant">
-                Enter the 6-digit code sent to <span className="font-semibold text-on-surface">{email}</span>
+                Enter the 6-digit code sent to{' '}
+                <span className="font-semibold text-on-surface">{email}</span>
               </p>
             </div>
 
             <form onSubmit={submitOtp} className="space-y-5">
-              <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+              <div
+                className="flex justify-center gap-2 sm:gap-3"
+                onPaste={handlePaste}
+              >
                 {digits.map((digit, index) => (
                   <input
                     key={index}
                     ref={(el) => {
-                      refs.current[index] = el;
+                      refs.current[index] = el
                     }}
                     type="text"
                     inputMode="numeric"
@@ -176,7 +193,8 @@ export default function OtpModal({ open, onOpenChange, email, onVerified, title 
               <Button type="submit" className="w-full" disabled={!canSubmit}>
                 {submitting ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Verifying code...
+                    <Loader2 size={18} className="animate-spin" /> Verifying
+                    code...
                   </>
                 ) : (
                   'Verify OTP'
@@ -192,7 +210,11 @@ export default function OtpModal({ open, onOpenChange, email, onVerified, title 
                 disabled={countdown > 0 || resending}
                 className="inline-flex items-center gap-1.5 font-semibold text-primary transition hover:underline disabled:cursor-not-allowed disabled:text-on-surface-variant disabled:no-underline"
               >
-                {resending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                {resending ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={14} />
+                )}
                 {countdown > 0 ? `Resend in ${countdown}s` : 'Resend OTP'}
               </button>
             </div>
@@ -200,5 +222,5 @@ export default function OtpModal({ open, onOpenChange, email, onVerified, title 
         </motion.div>
       )}
     </AnimatePresence>
-  );
+  )
 }

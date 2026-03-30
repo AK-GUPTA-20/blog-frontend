@@ -1,35 +1,47 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Skeleton } from '../components/ui/skeleton';
-import { getUserById, getPostsByAuthor } from '../services/postApi';
-import { 
-  AlertCircle, RefreshCw, ArrowLeft, Eye, Users, Heart, Share2, Mail, 
-  BookOpen, Award, TrendingUp, MessageCircle, Download, Copy, Check 
-} from 'lucide-react';
-import { toast } from '../components/Toast';
+import React, { useEffect, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Skeleton } from '../components/ui/skeleton'
+import { getPostsByAuthor } from '../services/postApi'
+import { useAuthorProfile } from '../hooks/useFollow'
+import { FollowButton } from '../components/follow/FollowButton'
+import {
+  AlertCircle,
+  RefreshCw,
+  ArrowLeft,
+  Eye,
+  Users,
+  Heart,
+  Share2,
+  Mail,
+  BookOpen,
+  Award,
+  TrendingUp,
+  MessageCircle,
+  Download,
+  Copy,
+  Check,
+} from 'lucide-react'
+import { toast } from '../components/Toast'
 
-  
 // PLACEHOLDER IMAGE
-  
 
-const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3EArticle%3C/text%3E%3C/svg%3E';
+const PLACEHOLDER_IMAGE =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3EArticle%3C/text%3E%3C/svg%3E'
 
-  
 // ANIMATED BACKGROUND COMPONENT
-  
 
 const AnimatedBackground = () => {
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-surface-container-low" />
-      
+
       <motion.div
         animate={{ x: [0, 30, 0], y: [0, 20, 0], rotate: [0, 360] }}
         transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
         className="absolute -top-40 -right-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
       />
-      
+
       <motion.div
         animate={{ x: [0, -30, 0], y: [0, -20, 0], rotate: [360, 0] }}
         transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
@@ -42,12 +54,10 @@ const AnimatedBackground = () => {
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/3 rounded-full blur-3xl"
       />
     </div>
-  );
-};
+  )
+}
 
-  
 // SKELETON COMPONENTS
-  
 
 function ProfileSkeleton() {
   return (
@@ -69,7 +79,7 @@ function ProfileSkeleton() {
         </div>
       </div>
     </motion.div>
-  );
+  )
 }
 
 function PostCardSkeleton({ delay = 0 }) {
@@ -87,40 +97,38 @@ function PostCardSkeleton({ delay = 0 }) {
       <Skeleton className="h-4 w-full rounded-lg mb-4" />
       <Skeleton className="h-4 w-2/3 rounded-lg" />
     </motion.article>
-  );
+  )
 }
 
-  
 // STATS CARD COMPONENT WITH COUNTER ANIMATION
-  
 
 const StatsCard = ({ icon: Icon, label, value, delay, color = 'blue' }) => {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(0)
 
   useEffect(() => {
-    let start = 0;
-    const end = parseInt(value) || 0;
-    const duration = 2;
-    const increment = end / (duration * 60);
+    let start = 0
+    const end = parseInt(value) || 0
+    const duration = 2
+    const increment = end / (duration * 60)
 
     const interval = setInterval(() => {
-      start += increment;
+      start += increment
       if (start >= end) {
-        setDisplayValue(end);
-        clearInterval(interval);
+        setDisplayValue(end)
+        clearInterval(interval)
       } else {
-        setDisplayValue(Math.floor(start));
+        setDisplayValue(Math.floor(start))
       }
-    }, 1000 / 60);
+    }, 1000 / 60)
 
-    return () => clearInterval(interval);
-  }, [value]);
+    return () => clearInterval(interval)
+  }, [value])
 
   const colorClasses = {
     blue: 'from-blue-500/20 to-blue-500/5',
     purple: 'from-purple-500/20 to-purple-500/5',
     rose: 'from-rose-500/20 to-rose-500/5',
-  };
+  }
 
   return (
     <motion.div
@@ -150,7 +158,9 @@ const StatsCard = ({ icon: Icon, label, value, delay, color = 'blue' }) => {
           >
             <Icon size={24} className="text-primary" />
           </motion.div>
-          <span className="text-xs font-bold text-primary/60 uppercase tracking-widest">{label}</span>
+          <span className="text-xs font-bold text-primary/60 uppercase tracking-widest">
+            {label}
+          </span>
         </div>
 
         <motion.p
@@ -164,12 +174,10 @@ const StatsCard = ({ icon: Icon, label, value, delay, color = 'blue' }) => {
         <p className="text-sm text-on-surface-variant">{label}</p>
       </div>
     </motion.div>
-  );
-};
+  )
+}
 
-  
 // ENGAGEMENT METRIC COMPONENT
-  
 
 const EngagementMetric = ({ label, value, icon: Icon, percentage }) => {
   return (
@@ -178,10 +186,14 @@ const EngagementMetric = ({ label, value, icon: Icon, percentage }) => {
       className="bg-surface-container-low/80 backdrop-blur rounded-2xl p-4 border border-outline-variant/20"
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+          {label}
+        </span>
         <Icon size={16} className="text-primary" />
       </div>
-      <p className="text-2xl font-bold text-on-surface mb-2">{value.toLocaleString()}</p>
+      <p className="text-2xl font-bold text-on-surface mb-2">
+        {value.toLocaleString()}
+      </p>
       <div className="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
         <motion.div
           className="h-full bg-gradient-to-r from-primary to-purple-500"
@@ -191,12 +203,10 @@ const EngagementMetric = ({ label, value, icon: Icon, percentage }) => {
         />
       </div>
     </motion.div>
-  );
-};
+  )
+}
 
-  
 // ACHIEVEMENT BADGE COMPONENT
-  
 
 const AchievementBadge = ({ icon: Icon, title, description, delay }) => {
   return (
@@ -217,104 +227,86 @@ const AchievementBadge = ({ icon: Icon, title, description, delay }) => {
       <h4 className="font-semibold text-sm text-on-surface mb-1">{title}</h4>
       <p className="text-xs text-on-surface-variant">{description}</p>
     </motion.div>
-  );
-};
+  )
+}
 
-  
 // MAIN COMPONENT
-  
 
 export default function AuthorProfile() {
-  const { authorId } = useParams();
-  const navigate = useNavigate();
+  const { authorId } = useParams()
+  const navigate = useNavigate()
 
-  const [author, setAuthor] = useState(null);
-  const [posts, setPosts] = useState([]);
-  const [isLoadingAuthor, setIsLoadingAuthor] = useState(true);
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [email, setEmail] = useState('');
-  const [emailSubmitted, setEmailSubmitted] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [posts, setPosts] = useState([])
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [email, setEmail] = useState('')
+  const [emailSubmitted, setEmailSubmitted] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  const limit = 9;
+  const limit = 9
 
-  const loadAuthorProfile = async () => {
-    setIsLoadingAuthor(true);
-    setError(null);
+  const { data: authorData, isLoading: isLoadingAuthor, error: authorError, refetch: refetchAuthor } = useAuthorProfile(authorId)
 
-    try {
-      const response = await getUserById(authorId);
-      const userData = response?.user || response?.data || {};
-      
-      // Calculate total engagement
-      const totalEngagement = userData.posts?.reduce((sum, post) => {
-        return sum + (post.stats?.likes || 0) + (post.stats?.views || 0);
-      }, 0) || 0;
+  // Derived state from query
+  const userData = authorData?.user || authorData?.data || null
+  const totalEngagement = userData?.posts?.reduce((sum, post) => {
+    return sum + (post.stats?.likes || 0) + (post.stats?.views || 0)
+  }, 0) || 0
 
-      setAuthor({
-        ...userData,
-        totalEngagement,
-        joinedDate: userData.createdAt,
-      });
-    } catch (err) {
-      setError(err);
-      console.error('Error loading author:', err);
-    } finally {
-      setIsLoadingAuthor(false);
-    }
-  };
+  const author = userData ? {
+    ...userData,
+    totalEngagement,
+    joinedDate: userData.createdAt,
+  } : null
+  const error = authorError
 
   const loadAuthorPosts = async () => {
-    setIsLoadingPosts(true);
+    setIsLoadingPosts(true)
 
     try {
-      const response = await getPostsByAuthor(authorId, currentPage, limit);
-      setPosts(response?.data || []);
-      setTotalPages(response?.pages || 1);
+      const response = await getPostsByAuthor(authorId, currentPage, limit)
+      setPosts(response?.data || [])
+      setTotalPages(response?.pages || 1)
     } catch (err) {
-      console.error('Error loading posts:', err);
+      console.error('Error loading posts:', err)
     } finally {
-      setIsLoadingPosts(false);
+      setIsLoadingPosts(false)
     }
-  };
+  }
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-    loadAuthorProfile();
-  }, [authorId]);
+    window.scrollTo(0, 0)
+  }, [authorId])
 
   useEffect(() => {
-    loadAuthorPosts();
-  }, [currentPage]);
+    loadAuthorPosts()
+  }, [currentPage])
 
   const handleRetry = () => {
-    loadAuthorProfile();
-    loadAuthorPosts();
-  };
+    refetchAuthor()
+  }
 
   const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    setEmailSubmitted(true);
-    toast('Successfully subscribed! Check your email.', 'success');
+    e.preventDefault()
+    setEmailSubmitted(true)
+    toast('Successfully subscribed! Check your email.', 'success')
     setTimeout(() => {
-      setEmail('');
-      setEmailSubmitted(false);
-    }, 2000);
-  };
+      setEmail('')
+      setEmailSubmitted(false)
+    }, 2000)
+  }
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    toast('Link copied to clipboard!', 'success');
-    setTimeout(() => setCopied(false), 2000);
-  };
+    navigator.clipboard.writeText(window.location.href)
+    setCopied(true)
+    toast('Link copied to clipboard!', 'success')
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const handleDownloadProfile = () => {
-    if (!author) return;
-    
+    if (!author) return
+
     const profileData = {
       name: author.name,
       role: author.role,
@@ -323,21 +315,19 @@ export default function AuthorProfile() {
       followers: author.totalFollowers,
       engagement: author.totalEngagement,
       joinedDate: author.joinedDate,
-    };
+    }
 
-    const dataStr = JSON.stringify(profileData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${author.name}-profile.json`;
-    link.click();
-    toast('Profile downloaded!', 'success');
-  };
+    const dataStr = JSON.stringify(profileData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${author.name}-profile.json`
+    link.click()
+    toast('Profile downloaded!', 'success')
+  }
 
-    
   // LOADING STATE
-    
 
   if (isLoadingAuthor) {
     return (
@@ -360,12 +350,10 @@ export default function AuthorProfile() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
-    
   // ERROR STATE
-    
 
   if (error) {
     return (
@@ -417,12 +405,10 @@ export default function AuthorProfile() {
           </motion.div>
         </div>
       </div>
-    );
+    )
   }
 
-    
   // MAIN CONTENT
-    
 
   return (
     <article className="relative min-h-screen bg-background overflow-hidden">
@@ -458,18 +444,26 @@ export default function AuthorProfile() {
 
               <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
                 {/* Avatar with Animation */}
-                <motion.div whileHover={{ scale: 1.1 }} className="relative flex-shrink-0">
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  className="relative flex-shrink-0"
+                >
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                    transition={{
+                      duration: 20,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
                     className="absolute inset-0 w-32 h-32 bg-gradient-to-br from-primary/50 to-purple-500/50 rounded-full blur-lg opacity-75"
                   />
                   <img
+                    loading="lazy"
                     src={author.avatar}
                     alt={author.name}
                     className="relative w-32 h-32 rounded-full object-cover border-4 border-surface-container-low shadow-2xl"
                     onError={(e) => {
-                      e.target.src = `https://i.pravatar.cc/150?u=${author._id}`;
+                      e.target.src = `https://i.pravatar.cc/150?u=${author._id}`
                     }}
                   />
                 </motion.div>
@@ -509,7 +503,8 @@ export default function AuthorProfile() {
                     transition={{ delay: 0.4 }}
                     className="text-on-surface-variant text-lg mb-6 max-w-2xl leading-relaxed"
                   >
-                    {author.bio || 'Passionate content creator sharing expertise and insights.'}
+                    {author.bio ||
+                      'Passionate content creator sharing expertise and insights.'}
                   </motion.p>
 
                   {/* Join Date */}
@@ -520,7 +515,11 @@ export default function AuthorProfile() {
                       transition={{ delay: 0.45 }}
                       className="text-xs text-on-surface-variant mb-4 uppercase tracking-wider"
                     >
-                      Joined {new Date(author.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+                      Joined{' '}
+                      {new Date(author.joinedDate).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                      })}
                     </motion.p>
                   )}
 
@@ -536,8 +535,12 @@ export default function AuthorProfile() {
                         <BookOpen size={20} className="text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-primary">{author.totalPosts || 0}</p>
-                        <p className="text-xs text-on-surface-variant uppercase tracking-wider">Articles</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {author.totalPosts || 0}
+                        </p>
+                        <p className="text-xs text-on-surface-variant uppercase tracking-wider">
+                          Articles
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -545,8 +548,12 @@ export default function AuthorProfile() {
                         <Users size={20} className="text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-primary">{author.totalFollowers || 0}</p>
-                        <p className="text-xs text-on-surface-variant uppercase tracking-wider">Followers</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {author.totalFollowers || 0}
+                        </p>
+                        <p className="text-xs text-on-surface-variant uppercase tracking-wider">
+                          Followers
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -554,8 +561,12 @@ export default function AuthorProfile() {
                         <TrendingUp size={20} className="text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-primary">{(author.totalEngagement || 0).toLocaleString()}</p>
-                        <p className="text-xs text-on-surface-variant uppercase tracking-wider">Engagement</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {(author.totalEngagement || 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-on-surface-variant uppercase tracking-wider">
+                          Engagement
+                        </p>
                       </div>
                     </div>
                   </motion.div>
@@ -609,7 +620,13 @@ export default function AuthorProfile() {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-2 flex-wrap items-center">
+                      <FollowButton 
+                        userId={author._id} 
+                        initialIsFollowing={authorData?.isFollowing || author.isFollowing} 
+                        className="py-2.5 px-6 min-w-[140px] text-sm" 
+                      />
+
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -642,7 +659,9 @@ export default function AuthorProfile() {
               transition={{ delay: 0.3 }}
               className="mb-12"
             >
-              <h3 className="text-xl font-headline font-bold mb-6">Author Statistics</h3>
+              <h3 className="text-xl font-headline font-bold mb-6">
+                Author Statistics
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatsCard
                   icon={BookOpen}
@@ -676,12 +695,18 @@ export default function AuthorProfile() {
                 transition={{ delay: 0.4 }}
                 className="mb-12"
               >
-                <h3 className="text-xl font-headline font-bold mb-6">Recent Post Metrics</h3>
+                <h3 className="text-xl font-headline font-bold mb-6">
+                  Recent Post Metrics
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {posts.slice(0, 3).map((post, i) => {
-                    const totalViews = posts.reduce((sum, p) => sum + (p.stats?.views || 0), 0);
-                    const currentViews = post.stats?.views || 0;
-                    const percentage = totalViews > 0 ? (currentViews / totalViews) * 100 : 0;
+                    const totalViews = posts.reduce(
+                      (sum, p) => sum + (p.stats?.views || 0),
+                      0
+                    )
+                    const currentViews = post.stats?.views || 0
+                    const percentage =
+                      totalViews > 0 ? (currentViews / totalViews) * 100 : 0
 
                     return (
                       <EngagementMetric
@@ -691,7 +716,7 @@ export default function AuthorProfile() {
                         icon={Eye}
                         percentage={percentage}
                       />
-                    );
+                    )
                   })}
                 </div>
               </motion.div>
@@ -704,7 +729,9 @@ export default function AuthorProfile() {
               transition={{ delay: 0.5 }}
               className="mb-12"
             >
-              <h3 className="text-xl font-headline font-bold mb-6">Achievements</h3>
+              <h3 className="text-xl font-headline font-bold mb-6">
+                Achievements
+              </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <AchievementBadge
                   icon={Award}
@@ -715,7 +742,9 @@ export default function AuthorProfile() {
                 <AchievementBadge
                   icon={Heart}
                   title="Popular"
-                  description={author.totalFollowers > 50 ? 'Active' : 'Building'}
+                  description={
+                    author.totalFollowers > 50 ? 'Active' : 'Building'
+                  }
                   delay={0.1}
                 />
                 <AchievementBadge
@@ -741,9 +770,13 @@ export default function AuthorProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h2 className="text-3xl font-headline font-bold mb-4">Featured Articles</h2>
+          <h2 className="text-3xl font-headline font-bold mb-4">
+            Featured Articles
+          </h2>
           <p className="text-on-surface-variant mb-12">
-            {author ? `Explore ${author.name}'s latest insights and stories` : 'Explore latest articles'}
+            {author
+              ? `Explore ${author.name}'s latest insights and stories`
+              : 'Explore latest articles'}
           </p>
 
           {isLoadingPosts ? (
@@ -772,25 +805,25 @@ export default function AuthorProfile() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                 {posts.map((post, i) => {
-                  const postSlug = post.slug;
-                  const postTitle = post.title || 'Untitled';
-                  const postImage = post.featuredImage || PLACEHOLDER_IMAGE;
-                  const readTime = post.stats?.readingTime || 1;
-                  const views = post.stats?.views || 0;
-                  const likes = post.stats?.likes || 0;
-                  const publishedDate = post.publishedAt || post.createdAt;
+                  const postSlug = post.slug
+                  const postTitle = post.title || 'Untitled'
+                  const postImage = post.featuredImage || PLACEHOLDER_IMAGE
+                  const readTime = post.stats?.readingTime || 1
+                  const views = post.stats?.views || 0
+                  const likes = post.stats?.likes || 0
+                  const publishedDate = post.publishedAt || post.createdAt
 
-                  let formattedDate = '';
+                  let formattedDate = ''
                   if (publishedDate) {
                     try {
-                      const date = new Date(publishedDate);
+                      const date = new Date(publishedDate)
                       formattedDate = date.toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',
-                      });
+                      })
                     } catch (e) {
-                      formattedDate = publishedDate;
+                      formattedDate = publishedDate
                     }
                   }
 
@@ -815,7 +848,7 @@ export default function AuthorProfile() {
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           loading="lazy"
                           onError={(e) => {
-                            e.target.src = PLACEHOLDER_IMAGE;
+                            e.target.src = PLACEHOLDER_IMAGE
                           }}
                         />
 
@@ -862,7 +895,7 @@ export default function AuthorProfile() {
                         </div>
                       </div>
                     </motion.article>
-                  );
+                  )
                 })}
               </div>
 
@@ -877,7 +910,9 @@ export default function AuthorProfile() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage === 1}
                     className="px-6 py-3 rounded-full bg-surface-container-low/80 backdrop-blur border border-outline-variant/30 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all font-semibold"
                   >
@@ -885,24 +920,26 @@ export default function AuthorProfile() {
                   </motion.button>
 
                   <div className="flex items-center gap-2 flex-wrap justify-center">
-                    {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
-                      const pageNum = i + 1;
-                      return (
-                        <motion.button
-                          key={pageNum}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-10 h-10 rounded-full font-semibold transition-all ${
-                            currentPage === pageNum
-                              ? 'bg-primary text-on-primary shadow-lg shadow-primary/50'
-                              : 'bg-surface-bright text-on-surface hover:bg-surface-bright/80'
-                          }`}
-                        >
-                          {pageNum}
-                        </motion.button>
-                      );
-                    })}
+                    {Array.from({ length: Math.min(totalPages, 5) }).map(
+                      (_, i) => {
+                        const pageNum = i + 1
+                        return (
+                          <motion.button
+                            key={pageNum}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-10 h-10 rounded-full font-semibold transition-all ${
+                              currentPage === pageNum
+                                ? 'bg-primary text-on-primary shadow-lg shadow-primary/50'
+                                : 'bg-surface-bright text-on-surface hover:bg-surface-bright/80'
+                            }`}
+                          >
+                            {pageNum}
+                          </motion.button>
+                        )
+                      }
+                    )}
                     {totalPages > 5 && (
                       <span className="text-on-surface-variant">...</span>
                     )}
@@ -911,7 +948,9 @@ export default function AuthorProfile() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
                     disabled={currentPage === totalPages}
                     className="px-6 py-3 rounded-full bg-surface-container-low/80 backdrop-blur border border-outline-variant/30 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all font-semibold"
                   >
@@ -952,10 +991,14 @@ export default function AuthorProfile() {
                 Subscribe to {author.name.split(' ')[0]}'s Newsletter
               </h3>
               <p className="text-on-surface-variant mb-8">
-                Get exclusive content, latest articles, and insights delivered to your inbox.
+                Get exclusive content, latest articles, and insights delivered
+                to your inbox.
               </p>
 
-              <form onSubmit={handleNewsletterSubmit} className="flex gap-3 mb-4 flex-col sm:flex-row max-w-md mx-auto">
+              <form
+                onSubmit={handleNewsletterSubmit}
+                className="flex gap-3 mb-4 flex-col sm:flex-row max-w-md mx-auto"
+              >
                 <input
                   type="email"
                   aria-label="Email for newsletter subscription"
@@ -989,5 +1032,5 @@ export default function AuthorProfile() {
         )}
       </div>
     </article>
-  );
+  )
 }

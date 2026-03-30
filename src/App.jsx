@@ -1,32 +1,32 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import React, { Suspense } from "react"
-import { ThemeProvider } from "./components/ThemeProvider"
-import Navbar from "./components/Navbar"
-import Footer from "./components/Footer"
-import LenisProvider from "./components/LenisProvider"
-import { AuthProvider } from "./context/AuthContext"
-import { ToastContainer } from "./components/Toast"
-import { Loader2 } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import React, { Suspense } from 'react'
+import { ThemeProvider } from './components/ThemeProvider'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
+import LenisProvider from './components/LenisProvider'
+import { AuthProvider } from './context/AuthContext'
+import { ToastContainer } from './components/Toast'
+import { Loader2 } from 'lucide-react'
 
-const Home = React.lazy(() => import("./pages/Home"));
-const Post = React.lazy(() => import("./pages/Post"));
-const About = React.lazy(() => import("./pages/About"));
-const Blogs = React.lazy(() => import("./pages/Blogs"));
-const Authors = React.lazy(() => import("./pages/Authors"));
-const Login = React.lazy(() => import("./pages/Login"));
-const Register = React.lazy(() => import("./pages/Register"));
-const OtpVerify = React.lazy(() => import("./pages/OtpVerify"));
-const MyProfile = React.lazy(() => import("./pages/MyProfile"));
-const WriteBlog = React.lazy(() => import("./pages/WriteBlog"));
-const AuthorProfile = React.lazy(() => import("./pages/AuthorProfile"));
-const SavedPosts = React.lazy(() => import("./pages/SavedPosts"));
+const Home = React.lazy(() => import('./pages/Home'))
+const Post = React.lazy(() => import('./pages/Post'))
+const About = React.lazy(() => import('./pages/About'))
+const Blogs = React.lazy(() => import('./pages/Blogs'))
+const Authors = React.lazy(() => import('./pages/Authors'))
+const Login = React.lazy(() => import('./pages/Login'))
+const Register = React.lazy(() => import('./pages/Register'))
+const OtpVerify = React.lazy(() => import('./pages/OtpVerify'))
+const MyProfile = React.lazy(() => import('./pages/MyProfile'))
+const WriteBlog = React.lazy(() => import('./pages/WriteBlog'))
+const AuthorProfile = React.lazy(() => import('./pages/AuthorProfile'))
+const SavedPosts = React.lazy(() => import('./pages/SavedPosts'))
 
 function PageLoader() {
   return (
     <div className="flex h-[50vh] items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
-  );
+  )
 }
 
 function App() {
@@ -52,7 +52,10 @@ function App() {
                     <Route path="/my-profile" element={<MyProfile />} />
                     <Route path="/write-blog" element={<WriteBlog />} />
                     <Route path="/write-blog/:id" element={<WriteBlog />} />
-                    <Route path="/author-profile/:authorId" element={<AuthorProfile />} />
+                    <Route
+                      path="/author-profile/:authorId"
+                      element={<AuthorProfile />}
+                    />
                     <Route path="/saved-posts" element={<SavedPosts />} />
                   </Routes>
                 </Suspense>

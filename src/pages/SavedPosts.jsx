@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Skeleton } from '../components/ui/skeleton';
-import { getMySavedPosts } from '../services/postApi';
-import { AlertCircle, RefreshCw, BookmarkX, Eye, ArrowLeft } from 'lucide-react';
-import { toast } from '../components/Toast';
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Skeleton } from '../components/ui/skeleton'
+import { getMySavedPosts } from '../services/postApi'
+import { AlertCircle, RefreshCw, BookmarkX, Eye, ArrowLeft } from 'lucide-react'
+import { toast } from '../components/Toast'
 
 // Placeholder image
-const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3ESaved Post%3C/text%3E%3C/svg%3E';
+const PLACEHOLDER_IMAGE =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234f46e5;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%237c3aed;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="800" height="600" fill="url(%23grad)"/%3E%3Ctext x="50%25" y="50%25" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" dy=".3em" opacity="0.7"%3ESaved Post%3C/text%3E%3C/svg%3E'
 
-  
 // SKELETON COMPONENT
-  
+
 function BlogCardSkeleton({ delay = 0 }) {
   return (
     <motion.article
@@ -46,65 +46,62 @@ function BlogCardSkeleton({ delay = 0 }) {
         </div>
       </div>
     </motion.article>
-  );
+  )
 }
 
-  
 // MAIN COMPONENT
-  
+
 export default function SavedPosts() {
-  const [savedPosts, setSavedPosts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalSaved, setTotalSaved] = useState(0);
-  const navigate = useNavigate();
+  const [savedPosts, setSavedPosts] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalSaved, setTotalSaved] = useState(0)
+  const navigate = useNavigate()
 
-  const limit = 10;
+  const limit = 10
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null;
+  const token =
+    typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null
 
-    
   // LOAD SAVED POSTS
-    
+
   const loadSavedPosts = async () => {
     if (!token) {
-      toast('Please login to view saved posts', 'info');
-      navigate('/login');
-      return;
+      toast('Please login to view saved posts', 'info')
+      navigate('/login')
+      return
     }
 
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
-      const response = await getMySavedPosts(token, currentPage, limit);
-      setSavedPosts(response?.data || []);
-      setTotalSaved(response?.total || 0);
-      setTotalPages(response?.pages || 1);
+      const response = await getMySavedPosts(token, currentPage, limit)
+      setSavedPosts(response?.data || [])
+      setTotalSaved(response?.total || 0)
+      setTotalPages(response?.pages || 1)
     } catch (err) {
-      setError(err);
+      setError(err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleRetry = () => {
-    loadSavedPosts();
-  };
+    loadSavedPosts()
+  }
 
-    
   // LOAD ON MOUNT AND PAGE CHANGE
-    
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    loadSavedPosts();
-  }, [currentPage, token]);
 
-    
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    loadSavedPosts()
+  }, [currentPage, token])
+
   // LOADING STATE
-    
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
@@ -118,12 +115,11 @@ export default function SavedPosts() {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
-    
   // ERROR STATE
-    
+
   if (error) {
     return (
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
@@ -176,12 +172,11 @@ export default function SavedPosts() {
           </div>
         </motion.div>
       </div>
-    );
+    )
   }
 
-    
   // EMPTY STATE
-    
+
   if (savedPosts.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pb-24 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
@@ -213,7 +208,8 @@ export default function SavedPosts() {
               No Saved Posts
             </h2>
             <p className="text-on-surface-variant mb-6">
-              You haven't saved any posts yet. Start saving posts to find them here!
+              You haven't saved any posts yet. Start saving posts to find them
+              here!
             </p>
             <Link
               to="/blogs"
@@ -224,12 +220,11 @@ export default function SavedPosts() {
           </div>
         </motion.div>
       </div>
-    );
+    )
   }
 
-    
   // MAIN CONTENT
-    
+
   return (
     <article className="pb-24">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pt-12 md:pt-24 min-h-screen bg-background text-on-surface">
@@ -259,36 +254,39 @@ export default function SavedPosts() {
         {/* INFO */}
         <div className="mb-12 text-on-surface-variant">
           <p className="text-lg">
-            You have <span className="font-bold text-on-surface">{totalSaved}</span> saved post(s)
+            You have{' '}
+            <span className="font-bold text-on-surface">{totalSaved}</span>{' '}
+            saved post(s)
           </p>
         </div>
 
         {/* BLOG GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
           {savedPosts.map((post, i) => {
-            const postId = post.id || post._id;
-            const postSlug = post.slug;
-            const postImage = post.featuredImage || PLACEHOLDER_IMAGE;
-            const postTitle = post.title || 'Untitled';
-            const readTime = post.stats?.readingTime || 1;
-            const views = post.stats?.views || 0;
-            const publishedDate = post.publishedAt || post.createdAt;
+            const postId = post.id || post._id
+            const postSlug = post.slug
+            const postImage = post.featuredImage || PLACEHOLDER_IMAGE
+            const postTitle = post.title || 'Untitled'
+            const readTime = post.stats?.readingTime || 1
+            const views = post.stats?.views || 0
+            const publishedDate = post.publishedAt || post.createdAt
 
-            const authorId = post.author?.id || post.author?._id || postId;
-            const authorName = post.author?.name || 'Anonymous';
-            const authorAvatar = post.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`;
+            const authorId = post.author?.id || post.author?._id || postId
+            const authorName = post.author?.name || 'Anonymous'
+            const authorAvatar =
+              post.author?.avatar || `https://i.pravatar.cc/150?u=${authorId}`
 
-            let formattedDate = '';
+            let formattedDate = ''
             if (publishedDate) {
               try {
-                const date = new Date(publishedDate);
+                const date = new Date(publishedDate)
                 formattedDate = date.toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric',
-                });
+                })
               } catch (e) {
-                formattedDate = publishedDate;
+                formattedDate = publishedDate
               }
             }
 
@@ -313,7 +311,7 @@ export default function SavedPosts() {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     loading="lazy"
                     onError={(e) => {
-                      e.target.src = PLACEHOLDER_IMAGE;
+                      e.target.src = PLACEHOLDER_IMAGE
                     }}
                   />
                 </div>
@@ -344,7 +342,7 @@ export default function SavedPosts() {
                         className="w-7 h-7 rounded-full object-cover border border-outline-variant/30 flex-shrink-0"
                         loading="lazy"
                         onError={(e) => {
-                          e.target.src = `https://i.pravatar.cc/150?u=${authorId}`;
+                          e.target.src = `https://i.pravatar.cc/150?u=${authorId}`
                         }}
                       />
                       <span className="truncate font-medium">{authorName}</span>
@@ -357,7 +355,7 @@ export default function SavedPosts() {
                   </div>
                 </div>
               </motion.article>
-            );
+            )
           })}
         </div>
 
@@ -368,7 +366,7 @@ export default function SavedPosts() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                setCurrentPage((prev) => Math.max(1, prev - 1));
+                setCurrentPage((prev) => Math.max(1, prev - 1))
               }}
               disabled={currentPage === 1}
               className="px-6 py-3 rounded-full glass-card disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all"
@@ -398,7 +396,7 @@ export default function SavedPosts() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
               }}
               disabled={currentPage === totalPages}
               className="px-6 py-3 rounded-full glass-card disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-bright transition-all"
@@ -409,5 +407,5 @@ export default function SavedPosts() {
         )}
       </div>
     </article>
-  );
+  )
 }
