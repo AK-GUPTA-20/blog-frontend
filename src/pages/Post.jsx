@@ -6,6 +6,7 @@ import DOMPurify from 'dompurify'
 import { Skeleton } from '../components/ui/skeleton'
 import { toast } from '../components/Toast'
 import { getPostBySlug, likePost, savePost } from '../services/postApi'
+import { useAuth } from '../context/AuthContext'
 
 function PostSkeleton() {
   return (
@@ -110,21 +111,11 @@ export default function Post() {
   const [isSaved, setIsSaved] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [postId, setPostId] = useState(null)
+  
+  const { token, user } = useAuth()
 
   //   Use ref to prevent double fetch in Strict Mode
   const fetchedRef = useRef(false)
-
-  // Get token from localStorage (safe)
-  const getToken = () => {
-    try {
-      return typeof window !== 'undefined'
-        ? localStorage.getItem('velora_token')
-        : null
-    } catch (e) {
-      return null
-    }
-  }
-  const token = getToken()
 
   useEffect(() => {
     window.scrollTo(0, 0)

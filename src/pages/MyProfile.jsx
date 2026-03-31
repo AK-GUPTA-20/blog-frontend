@@ -356,6 +356,7 @@ export default function MyProfile() {
     mutationFn: () => deleteAccount(token, deletePassword),
     onSuccess: () => {
       toast('Account deleted successfully. Redirecting...', 'success')
+      setDeletePassword('')
       setTimeout(() => {
         login(null, '')
         navigate('/login')

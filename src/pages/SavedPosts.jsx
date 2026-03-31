@@ -5,6 +5,7 @@ import { Skeleton } from '../components/ui/skeleton'
 import { getMySavedPosts } from '../services/postApi'
 import { AlertCircle, RefreshCw, BookmarkX, Eye, ArrowLeft } from 'lucide-react'
 import { toast } from '../components/Toast'
+import { useAuth } from '../context/AuthContext'
 
 // Placeholder image
 const PLACEHOLDER_IMAGE =
@@ -62,8 +63,7 @@ export default function SavedPosts() {
 
   const limit = 10
 
-  const token =
-    typeof window !== 'undefined' ? localStorage.getItem('velora_token') : null
+  const { token } = useAuth()
 
   // LOAD SAVED POSTS
 

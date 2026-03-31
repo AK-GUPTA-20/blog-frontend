@@ -5,7 +5,7 @@ export const APP_CONFIG = {
 }
 
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://blog-backend-mueu.onrender.com',
   AUTH_TOKEN_KEY: 'velora_token',
   AUTH_USER_KEY: 'velora_user',
 }

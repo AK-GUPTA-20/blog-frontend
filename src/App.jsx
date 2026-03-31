@@ -1,3 +1,5 @@
+// Replace your current App.jsx with this updated version
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import React, { Suspense } from 'react'
 import { ThemeProvider } from './components/ThemeProvider'
@@ -20,6 +22,8 @@ const MyProfile = React.lazy(() => import('./pages/MyProfile'))
 const WriteBlog = React.lazy(() => import('./pages/WriteBlog'))
 const AuthorProfile = React.lazy(() => import('./pages/AuthorProfile'))
 const SavedPosts = React.lazy(() => import('./pages/SavedPosts'))
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'))
 
 function PageLoader() {
   return (
@@ -49,6 +53,11 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-otp" element={<OtpVerify />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route
+                      path="/password/reset/:token"
+                      element={<ResetPassword />}
+                    />
                     <Route path="/my-profile" element={<MyProfile />} />
                     <Route path="/write-blog" element={<WriteBlog />} />
                     <Route path="/write-blog/:id" element={<WriteBlog />} />

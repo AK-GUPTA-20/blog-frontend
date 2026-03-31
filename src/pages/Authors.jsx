@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Skeleton } from '../components/ui/skeleton'
+import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { FollowButton } from '../components/follow/FollowButton'
 import { useAllAuthors } from '../hooks/useFollow'
@@ -322,19 +323,18 @@ const AuthorCard = ({ author, onViewProfile }) => {
       </div>
 
       {/* View Profile Button & Follow Button */}
-      <div className="w-full flex gap-3 mt-auto">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+      <div className="w-full flex flex-wrap sm:flex-nowrap gap-3 mt-auto">
+        <Button
+          variant="outline"
           onClick={() => onViewProfile(author._id)}
-          className="flex-1 py-3 rounded-xl border-2 border-primary/20 bg-transparent text-primary font-bold text-sm hover:bg-primary hover:text-on-primary hover:border-primary transition-all duration-300"
+          className="flex-1 rounded-full min-w-0 px-1"
         >
-          View Profile
-        </motion.button>
+          <span className="truncate">View Profile</span>
+        </Button>
         <FollowButton 
           userId={author._id} 
           initialIsFollowing={author.isFollowing} 
-          className="flex-1 py-3" 
+          className="flex-1 min-w-0 px-2" 
         />
       </div>
     </motion.div>

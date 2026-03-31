@@ -266,6 +266,17 @@ export default function Login() {
               </p>
             </div>
 
+
+            {/* Forgot Password Link */}
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-primary dark:text-primary hover:underline font-medium transition-all"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <motion.div
               whileHover={{ scale: loading ? 1 : 1.01 }}
               whileTap={{ scale: loading ? 1 : 0.99 }}

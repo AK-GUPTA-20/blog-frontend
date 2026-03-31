@@ -263,7 +263,7 @@ export async function changePassword(token, passwordData) {
 
 export async function deleteAccount(token, password) {
   const res = await apiFetch(`${BASE_URL}/me/delete-account`, {
-    method: 'DELETE',
+    method: 'POST',
     headers: createAuthHeaders(token),
     body: JSON.stringify({ password }),
   })
@@ -292,6 +292,7 @@ export async function logout(token) {
     clearStorage()
   }
 }
+
 
 export function clearAuth() {
   clearStorage()
